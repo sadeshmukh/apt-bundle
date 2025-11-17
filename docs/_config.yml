@@ -1,7 +1,7 @@
 title: apt-bundle
 description: A declarative package manager for apt, inspired by Homebrew's brew bundle
-url: https://apt-bundle.github.io
-baseurl: /apt-bundle
+url: https://apt-bundle.org
+baseurl: ""
 
 # Theme
 remote_theme: just-the-docs/just-the-docs
