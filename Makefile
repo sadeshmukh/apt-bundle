@@ -1,4 +1,4 @@
-.PHONY: build install clean test test-coverage test-coverage-html fmt vet lint help
+.PHONY: build install clean test test-coverage test-coverage-html fmt vet lint help package release-test
 
 BINARY_NAME=apt-bundle
 BUILD_DIR=build
@@ -31,6 +31,7 @@ uninstall:
 clean:
 	@echo "Cleaning build artifacts..."
 	@rm -rf $(BUILD_DIR)
+	@rm -rf dist
 	@rm -f coverage.out coverage.html
 	@echo "✓ Clean complete"
 
@@ -73,6 +74,42 @@ deps:
 	$(GO) mod download
 	$(GO) mod tidy
 
+# Build .deb packages locally using nfpm
+package: build
+	@echo "Building .deb packages..."
+	@if ! command -v nfpm >/dev/null 2>&1; then \
+		echo "Installing nfpm..."; \
+		$(GO) install github.com/goreleaser/nfpm/v2/cmd/nfpm@latest; \
+	fi
+	@mkdir -p dist
+	@VERSION=$$(cat VERSION | tr -d '[:space:]').0; \
+	echo "Building packages for version $$VERSION"; \
+	for arch in amd64 arm64 armhf i386; do \
+		echo "Building for $$arch..."; \
+		case $$arch in \
+			amd64) GOARCH=amd64 GOARM= ;; \
+			arm64) GOARCH=arm64 GOARM= ;; \
+			armhf) GOARCH=arm GOARM=7 ;; \
+			i386) GOARCH=386 GOARM= ;; \
+		esac; \
+		CGO_ENABLED=0 GOOS=linux GOARCH=$$GOARCH GOARM=$$GOARM \
+			$(GO) build $(GOFLAGS) -o $(BUILD_DIR)/apt-bundle ./cmd/apt-bundle; \
+		nfpm package \
+			--config .nfpm.yaml \
+			--target dist/ \
+			--packager deb \
+			--version $$VERSION \
+			--arch $$arch || true; \
+	done
+	@echo "✓ Packages built in dist/"
+
+# Test release workflow locally (dry-run)
+release-test:
+	@echo "Testing release workflow..."
+	@echo "VERSION file contents: $$(cat VERSION)"
+	@echo "This would calculate next patch version based on existing releases"
+	@echo "Run 'make package' to build packages locally"
+
 # Show help
 help:
 	@echo "Available targets:"
@@ -87,6 +124,8 @@ help:
 	@echo "  vet                 - Run go vet"
 	@echo "  lint                - Run golangci-lint"
 	@echo "  deps                - Download and tidy dependencies"
+	@echo "  package             - Build .deb packages locally using nfpm"
+	@echo "  release-test        - Test release workflow locally (dry-run)"
 	@echo "  help                - Show this help message"
 	@echo ""
 	@echo "Environment variables:"

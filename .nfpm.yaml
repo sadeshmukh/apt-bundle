@@ -1,0 +1,29 @@
+name: apt-bundle
+arch: "{{ .Arch }}"
+platform: linux
+version: "{{ .Version }}"
+section: utils
+priority: optional
+maintainer: maintainers@apt-bundle.org
+description: |
+  A declarative package manager for apt, inspired by Homebrew's brew bundle.
+  apt-bundle provides a simple, declarative, and shareable way to manage
+  apt packages and repositories on Debian-based systems.
+homepage: https://apt-bundle.github.io/apt-bundle
+license: MIT
+vendor: apt-bundle
+contents:
+  - src: build/apt-bundle
+    dst: /usr/bin/apt-bundle
+    type: file
+    file_info:
+      mode: 0755
+overrides:
+  deb:
+    depends:
+      - apt
+    recommends:
+      - curl
+    suggests:
+      - git
+

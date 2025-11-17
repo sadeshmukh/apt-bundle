@@ -18,6 +18,31 @@ A declarative package manager for apt, inspired by Homebrew's `brew bundle`.
 
 ## Installation
 
+### Quick Install (Recommended)
+
+Install the latest release using the install script:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/apt-bundle/apt-bundle/main/install.sh | sudo bash
+```
+
+### Manual Installation from .deb Package
+
+Download and install the appropriate `.deb` package for your architecture:
+
+```bash
+# Detect your architecture
+ARCH=$(dpkg --print-architecture)
+
+# Download latest release (replace v1.0.0 with actual version)
+VERSION=$(curl -s https://api.github.com/repos/apt-bundle/apt-bundle/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+curl -LO https://github.com/apt-bundle/apt-bundle/releases/download/${VERSION}/apt-bundle_${VERSION#v}_linux_${ARCH}.deb
+
+# Install
+sudo dpkg -i apt-bundle_${VERSION#v}_linux_${ARCH}.deb
+sudo apt-get install -f  # Install dependencies if needed
+```
+
 ### From Source
 
 ```bash
@@ -146,8 +171,12 @@ sudo apt-bundle
 FROM ubuntu:22.04
 
 # Install apt-bundle
-RUN curl -L https://github.com/apt-bundle/apt-bundle/releases/latest/download/apt-bundle -o /usr/local/bin/apt-bundle && \
-    chmod +x /usr/local/bin/apt-bundle
+RUN ARCH=$(dpkg --print-architecture) && \
+    VERSION=$(curl -s https://api.github.com/repos/apt-bundle/apt-bundle/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/') && \
+    curl -LO https://github.com/apt-bundle/apt-bundle/releases/download/${VERSION}/apt-bundle_${VERSION#v}_linux_${ARCH}.deb && \
+    dpkg -i apt-bundle_${VERSION#v}_linux_${ARCH}.deb && \
+    apt-get install -f -y && \
+    rm apt-bundle_${VERSION#v}_linux_${ARCH}.deb
 
 # Copy Aptfile and install dependencies
 COPY Aptfile /app/Aptfile
@@ -206,6 +235,14 @@ sudo make install
 
 - Go 1.21 or later
 - Debian/Ubuntu-based system (for running the tool)
+
+### Version Management
+
+The project uses a VERSION file for version management:
+- The `VERSION` file contains the major.minor version (e.g., `1.0`)
+- Patch versions are automatically incremented on each release
+- To update the major or minor version, edit the `VERSION` file
+- Releases are automatically created when code is merged to the `main` branch
 
 ## Technical Details
 

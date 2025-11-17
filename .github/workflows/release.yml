@@ -1,0 +1,187 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.check_release.outputs.version }}
+      tag: ${{ steps.check_release.outputs.tag }}
+      skip: ${{ steps.check_release.outputs.skip }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Read VERSION file
+        id: version
+        run: |
+          MAJOR_MINOR=$(cat VERSION | tr -d '[:space:]')
+          echo "major_minor=${MAJOR_MINOR}" >> $GITHUB_OUTPUT
+          echo "Read version: ${MAJOR_MINOR}"
+
+      - name: Calculate next patch version
+        id: next_version
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          MAJOR_MINOR="${{ steps.version.outputs.major_minor }}"
+          echo "Looking for existing releases matching ${MAJOR_MINOR}.*"
+          
+          # Get all releases matching the major.minor prefix
+          RELEASES=$(curl -s -H "Authorization: token ${GITHUB_TOKEN}" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/releases" | \
+            jq -r ".[].tag_name" | grep "^v${MAJOR_MINOR}\." || true)
+          
+          if [ -z "$RELEASES" ]; then
+            PATCH=0
+          else
+            # Extract patch versions and find the maximum
+            MAX_PATCH=$(echo "$RELEASES" | sed "s/^v${MAJOR_MINOR}\.//" | sort -n | tail -1)
+            PATCH=$((MAX_PATCH + 1))
+          fi
+          
+          VERSION="${MAJOR_MINOR}.${PATCH}"
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "tag=v${VERSION}" >> $GITHUB_OUTPUT
+          echo "Calculated next version: ${VERSION}"
+
+      - name: Check if release already exists
+        id: check_release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ steps.next_version.outputs.tag }}"
+          if curl -s -H "Authorization: token ${GITHUB_TOKEN}" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/tags/${TAG}" | \
+            grep -q '"id"'; then
+            echo "Release ${TAG} already exists, skipping"
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+          echo "version=${{ steps.next_version.outputs.version }}" >> $GITHUB_OUTPUT
+          echo "tag=${{ steps.next_version.outputs.tag }}" >> $GITHUB_OUTPUT
+
+      - name: Install nfpm
+        if: steps.check_release.outputs.skip != 'true'
+        run: |
+          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@latest
+
+      - name: Install GitHub CLI
+        if: steps.check_release.outputs.skip != 'true'
+        run: |
+          type -p curl >/dev/null || apt install curl -y
+          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+          chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+          apt update
+          apt install gh -y
+
+      - name: Build and package for all architectures
+        if: steps.check_release.outputs.skip != 'true'
+        strategy:
+          matrix:
+            include:
+              - goarch: amd64
+                debarch: amd64
+              - goarch: arm64
+                debarch: arm64
+              - goarch: arm
+                debarch: armhf
+                goarm: 7
+              - goarch: 386
+                debarch: i386
+        env:
+          GOARCH: ${{ matrix.goarch }}
+          GOARM: ${{ matrix.goarm }}
+          VERSION: ${{ steps.next_version.outputs.version }}
+        run: |
+          # Build binary for this architecture
+          mkdir -p build dist
+          CGO_ENABLED=0 GOOS=linux GOARCH=${GOARCH} GOARM=${GOARM} \
+            go build -ldflags="-s -w" -o build/apt-bundle ./cmd/apt-bundle
+          
+          # Create .deb package
+          nfpm package \
+            --config .nfpm.yaml \
+            --target dist/ \
+            --packager deb \
+            --version ${VERSION} \
+            --arch ${matrix.debarch}
+          
+          # Rename to include architecture in filename
+          PACKAGE_NAME=$(ls dist/*.deb | head -1)
+          NEW_NAME=$(echo $PACKAGE_NAME | sed "s/_linux_/_linux_${matrix.debarch}_/")
+          if [ "$PACKAGE_NAME" != "$NEW_NAME" ]; then
+            mv "$PACKAGE_NAME" "$NEW_NAME"
+          fi
+          echo "Created: $NEW_NAME"
+          
+          # Upload artifact for later collection
+          mkdir -p artifacts
+          cp "$NEW_NAME" artifacts/
+
+      - name: Upload packages as artifacts
+        if: steps.check_release.outputs.skip != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: deb-packages
+          path: artifacts/*.deb
+          retention-days: 1
+
+  create-release:
+    needs: release
+    if: needs.release.outputs.skip != 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download packages
+        uses: actions/download-artifact@v4
+        with:
+          name: deb-packages
+          path: packages
+
+      - name: Install GitHub CLI
+        run: |
+          type -p curl >/dev/null || apt install curl -y
+          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+          chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+          apt update
+          apt install gh -y
+
+      - name: Create GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ needs.release.outputs.tag }}"
+          VERSION="${{ needs.release.outputs.version }}"
+          
+          # Create release with all packages
+          gh release create "${TAG}" \
+            --title "apt-bundle ${VERSION}" \
+            --notes "Release ${VERSION} of apt-bundle" \
+            packages/*.deb \
+            --repo "${GITHUB_REPOSITORY}"
+          
+          echo "## Release Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- Version: ${VERSION}" >> $GITHUB_STEP_SUMMARY
+          echo "- Tag: ${TAG}" >> $GITHUB_STEP_SUMMARY
+          echo "- Packages created:" >> $GITHUB_STEP_SUMMARY
+          ls -lh packages/*.deb | awk '{print "  - " $9 " (" $5 ")"}' >> $GITHUB_STEP_SUMMARY
+
