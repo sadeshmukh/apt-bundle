@@ -1,4 +1,9 @@
 .local/
+# Build output
+build/
+dist/
+*.exe
+
 # Created by https://www.toptal.com/developers/gitignore/api/go
 # Edit at https://www.toptal.com/developers/gitignore?templates=go
 
@@ -27,3 +32,5 @@ go.work
 
 # End of https://www.toptal.com/developers/gitignore/api/go
 
+# Environment variables
+.env
