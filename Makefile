@@ -5,6 +5,7 @@ BUILD_DIR=build
 GO=go
 GOFLAGS=-ldflags="-s -w"
 INSTALL_DIR ?= /usr/local/bin
+USE_SUDO ?= sudo
 
 # Build the binary
 build:
@@ -16,14 +17,14 @@ build:
 # Install the binary to $(INSTALL_DIR) (may require sudo)
 install: build
 	@echo "Installing $(BINARY_NAME) to $(INSTALL_DIR)..."
-	@sudo cp $(BUILD_DIR)/$(BINARY_NAME) $(INSTALL_DIR)/
-	@sudo chmod +x $(INSTALL_DIR)/$(BINARY_NAME)
+	@$(USE_SUDO) cp $(BUILD_DIR)/$(BINARY_NAME) $(INSTALL_DIR)/
+	@$(USE_SUDO) chmod +x $(INSTALL_DIR)/$(BINARY_NAME)
 	@echo "✓ $(BINARY_NAME) installed successfully to $(INSTALL_DIR)"
 
 # Uninstall the binary
 uninstall:
 	@echo "Uninstalling $(BINARY_NAME) from $(INSTALL_DIR)..."
-	@sudo rm -f $(INSTALL_DIR)/$(BINARY_NAME)
+	@$(USE_SUDO) rm -f $(INSTALL_DIR)/$(BINARY_NAME)
 	@echo "✓ $(BINARY_NAME) uninstalled from $(INSTALL_DIR)"
 
 # Clean build artifacts
@@ -47,15 +48,10 @@ vet:
 	@echo "Running go vet..."
 	$(GO) vet ./...
 
-# Run golangci-lint (if installed)
+# Run golangci-lint (managed as a Go module dependency)
 lint:
 	@echo "Running linter..."
-	@if command -v golangci-lint > /dev/null; then \
-		golangci-lint run; \
-	else \
-		echo "golangci-lint not installed. Install with:"; \
-		echo "  go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest"; \
-	fi
+	$(GO) run github.com/golangci/golangci-lint/cmd/golangci-lint@latest run
 
 # Download dependencies
 deps:
@@ -79,4 +75,5 @@ help:
 	@echo ""
 	@echo "Environment variables:"
 	@echo "  INSTALL_DIR - Installation directory (default: /usr/local/bin)"
+	@echo "  USE_SUDO    - Command prefix for install/uninstall (default: sudo, set to empty for no sudo)"
 
