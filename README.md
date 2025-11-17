@@ -223,8 +223,9 @@ sudo make install
 
 📚 **[Full Documentation Site](https://apt-bundle.github.io/apt-bundle/)** - Complete user guide, developer documentation, and API reference
 
-- [Requirements](docs/requirements.md) - Detailed functional requirements
-- [Technical Specification](docs/tech-specs.md) - Aptfile format and implementation details
+For internal specifications:
+- [Requirements](specs/requirements.md) - Detailed functional requirements
+- [Technical Specification](specs/tech-specs.md) - Aptfile format and implementation details
 
 ## Contributing
 

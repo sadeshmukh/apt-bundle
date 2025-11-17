@@ -22,8 +22,6 @@ exclude:
   - vendor/gems/
   - vendor/ruby/
   - .gitignore
-  - requirements.md
-  - tech-specs.md
   - testing.md
 
 # Navigation

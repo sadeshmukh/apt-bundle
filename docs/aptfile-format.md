@@ -215,6 +215,6 @@ apt nodejs
 ## Related Documentation
 
 - [Usage Guide](usage.html) - How to use apt-bundle commands
-- [Technical Specification](../tech-specs.html) - Detailed technical specification
-- [Requirements](../requirements.html) - Functional requirements
+- [Technical Specification](https://github.com/apt-bundle/apt-bundle/blob/main/specs/tech-specs.md) - Internal specification
+- [Requirements](https://github.com/apt-bundle/apt-bundle/blob/main/specs/requirements.md) - Internal specification
 

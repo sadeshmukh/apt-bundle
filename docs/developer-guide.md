@@ -272,8 +272,8 @@ The apt-bundle binary is designed to be:
 - [Go Documentation](https://golang.org/doc/)
 - [Cobra Documentation](https://github.com/spf13/cobra/blob/main/site/content/introduction.md)
 - [Go Testing](https://golang.org/pkg/testing/)
-- [Project Requirements](../requirements.html)
-- [Technical Specification](../tech-specs.html)
+- [Project Requirements](https://github.com/apt-bundle/apt-bundle/blob/main/specs/requirements.md) - Internal specification
+- [Technical Specification](https://github.com/apt-bundle/apt-bundle/blob/main/specs/tech-specs.md) - Internal specification
 
 ## Getting Help
 
