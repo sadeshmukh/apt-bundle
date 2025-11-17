@@ -41,8 +41,8 @@ func TestRootCmd(t *testing.T) {
 			t.Errorf("rootCmd.Use = %v, want 'apt-bundle'", rootCmd.Use)
 		}
 
-		if rootCmd.Version != "0.1.0" {
-			t.Errorf("rootCmd.Version = %v, want '0.1.0'", rootCmd.Version)
+		if rootCmd.Version == "" {
+			t.Error("rootCmd.Version should not be empty")
 		}
 	})
 

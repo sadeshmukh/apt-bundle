@@ -3,7 +3,8 @@
 BINARY_NAME=apt-bundle
 BUILD_DIR=build
 GO=go
-GOFLAGS=-ldflags="-s -w"
+VERSION := $(shell cat VERSION | tr -d '[:space:]').0
+GOFLAGS=-ldflags="-s -w -X github.com/apt-bundle/apt-bundle/internal/commands.version=$(VERSION)"
 INSTALL_DIR ?= /usr/local/bin
 USE_SUDO ?= sudo
 
@@ -73,6 +74,7 @@ deps:
 	@echo "Downloading dependencies..."
 	$(GO) mod download
 	$(GO) mod tidy
+	@$(GO) mod verify
 
 # Build .deb packages locally using nfpm
 package: build
