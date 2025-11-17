@@ -1,0 +1,32 @@
+# Example Aptfile
+# This file demonstrates the apt-bundle syntax
+
+# Core development tools
+apt build-essential
+apt curl
+apt git
+apt vim
+apt htop
+apt jq
+
+# Specific version example
+# apt "nano=2.9.3-2"
+
+# Network tools
+apt net-tools
+apt wget
+apt ssh
+
+# PHP from PPA (commented out by default)
+# ppa ppa:ondrej/php
+# apt php8.1
+# apt php8.1-cli
+# apt php8.1-fpm
+
+# Docker installation (commented out by default)
+# key https://download.docker.com/linux/ubuntu/gpg
+# deb "[arch=amd64] https://download.docker.com/linux/ubuntu focal stable"
+# apt docker-ce
+# apt docker-ce-cli
+# apt containerd.io
+
