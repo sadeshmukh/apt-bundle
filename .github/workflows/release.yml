@@ -76,39 +76,40 @@ jobs:
           echo "version=${{ steps.next_version.outputs.version }}" >> $GITHUB_OUTPUT
           echo "tag=${{ steps.next_version.outputs.tag }}" >> $GITHUB_OUTPUT
 
+  build:
+    needs: release
+    if: needs.release.outputs.skip != 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - goarch: amd64
+            debarch: amd64
+          - goarch: arm64
+            debarch: arm64
+          - goarch: arm
+            debarch: armhf
+            goarm: 7
+          - goarch: 386
+            debarch: i386
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
       - name: Install nfpm
-        if: steps.check_release.outputs.skip != 'true'
         run: |
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@latest
 
-      - name: Install GitHub CLI
-        if: steps.check_release.outputs.skip != 'true'
-        run: |
-          type -p curl >/dev/null || apt install curl -y
-          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
-          chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
-          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list > /dev/null
-          apt update
-          apt install gh -y
-
-      - name: Build and package for all architectures
-        if: steps.check_release.outputs.skip != 'true'
-        strategy:
-          matrix:
-            include:
-              - goarch: amd64
-                debarch: amd64
-              - goarch: arm64
-                debarch: arm64
-              - goarch: arm
-                debarch: armhf
-                goarm: 7
-              - goarch: 386
-                debarch: i386
+      - name: Build and package for architecture
         env:
           GOARCH: ${{ matrix.goarch }}
           GOARM: ${{ matrix.goarm }}
-          VERSION: ${{ steps.next_version.outputs.version }}
+          VERSION: ${{ needs.release.outputs.version }}
         run: |
           # Build binary for this architecture
           mkdir -p build dist
@@ -121,11 +122,11 @@ jobs:
             --target dist/ \
             --packager deb \
             --version ${VERSION} \
-            --arch ${matrix.debarch}
+            --arch ${{ matrix.debarch }}
           
           # Rename to include architecture in filename
           PACKAGE_NAME=$(ls dist/*.deb | head -1)
-          NEW_NAME=$(echo $PACKAGE_NAME | sed "s/_linux_/_linux_${matrix.debarch}_/")
+          NEW_NAME=$(echo $PACKAGE_NAME | sed "s/_linux_/_linux_${{ matrix.debarch }}_/")
           if [ "$PACKAGE_NAME" != "$NEW_NAME" ]; then
             mv "$PACKAGE_NAME" "$NEW_NAME"
           fi
@@ -136,7 +137,6 @@ jobs:
           cp "$NEW_NAME" artifacts/
 
       - name: Upload packages as artifacts
-        if: steps.check_release.outputs.skip != 'true'
         uses: actions/upload-artifact@v4
         with:
           name: deb-packages
@@ -144,7 +144,7 @@ jobs:
           retention-days: 1
 
   create-release:
-    needs: release
+    needs: [release, build]
     if: needs.release.outputs.skip != 'true'
     runs-on: ubuntu-latest
     permissions:
