@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/spf13/cobra"
 )
@@ -32,6 +33,5 @@ func runDump(cmd *cobra.Command, args []string) error {
 }
 
 func getCurrentTime() string {
-	// TODO: Implement proper time formatting
-	return "TODO"
+	return time.Now().Format("2006-01-02 15:04:05")
 }
