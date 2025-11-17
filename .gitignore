@@ -35,3 +35,12 @@ go.work
 
 # Environment variables
 .env
+
+# Jekyll build artifacts (in docs/)
+docs/_site/
+docs/.sass-cache/
+docs/.jekyll-cache/
+docs/.jekyll-metadata
+docs/vendor/
+docs/.bundle/
+docs/Gemfile.lock

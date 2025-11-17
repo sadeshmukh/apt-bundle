@@ -2,6 +2,8 @@
 
 A declarative package manager for apt, inspired by Homebrew's `brew bundle`.
 
+**[📚 Full Documentation](https://apt-bundle.github.io/apt-bundle/)** | [Installation](#installation) | [Usage](#usage)
+
 ## Overview
 
 `apt-bundle` provides a simple, declarative, and shareable way to manage apt packages and repositories on Debian-based systems. Define your system dependencies in an `Aptfile` and install them with a single command.
@@ -218,6 +220,8 @@ sudo make install
 - [spf13/cobra](https://github.com/spf13/cobra) - CLI framework
 
 ## Documentation
+
+📚 **[Full Documentation Site](https://apt-bundle.github.io/apt-bundle/)** - Complete user guide, developer documentation, and API reference
 
 - [Requirements](docs/requirements.md) - Detailed functional requirements
 - [Technical Specification](docs/tech-specs.md) - Aptfile format and implementation details

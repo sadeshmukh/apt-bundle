@@ -1,0 +1,43 @@
+title: apt-bundle
+description: A declarative package manager for apt, inspired by Homebrew's brew bundle
+url: https://apt-bundle.github.io
+baseurl: /apt-bundle
+
+# Theme
+remote_theme: just-the-docs/just-the-docs
+
+# Plugins
+plugins:
+  - jekyll-feed
+  - jekyll-seo-tag
+  - jekyll-remote-theme
+
+# Exclude from processing
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - node_modules
+  - vendor/bundle/
+  - vendor/cache/
+  - vendor/gems/
+  - vendor/ruby/
+  - .gitignore
+  - requirements.md
+  - tech-specs.md
+  - testing.md
+
+# Navigation
+nav_order: 1
+aux_links:
+  "GitHub Repository":
+    - https://github.com/apt-bundle/apt-bundle
+
+# Footer content
+footer_content: "Released under the MIT License"
+
+# Color scheme
+color_scheme: light
+
+# Search
+search_enabled: true
+
