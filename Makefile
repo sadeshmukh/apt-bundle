@@ -1,4 +1,4 @@
-.PHONY: build install clean test fmt vet lint help
+.PHONY: build install clean test test-coverage test-coverage-html fmt vet lint help
 
 BINARY_NAME=apt-bundle
 BUILD_DIR=build
@@ -31,12 +31,26 @@ uninstall:
 clean:
 	@echo "Cleaning build artifacts..."
 	@rm -rf $(BUILD_DIR)
+	@rm -f coverage.out coverage.html
 	@echo "✓ Clean complete"
 
 # Run tests
 test:
 	@echo "Running tests..."
 	$(GO) test -v ./...
+
+# Run tests with coverage
+test-coverage:
+	@echo "Running tests with coverage..."
+	$(GO) test -v -race -coverprofile=coverage.out -covermode=atomic ./...
+	@echo "Coverage report:"
+	$(GO) tool cover -func=coverage.out
+
+# Run tests with coverage and generate HTML report
+test-coverage-html: test-coverage
+	@echo "Generating HTML coverage report..."
+	$(GO) tool cover -html=coverage.out -o coverage.html
+	@echo "✓ Coverage report generated at coverage.html"
 
 # Format code
 fmt:
@@ -62,16 +76,18 @@ deps:
 # Show help
 help:
 	@echo "Available targets:"
-	@echo "  build      - Build the binary"
-	@echo "  install    - Install the binary to $(INSTALL_DIR) (may require sudo)"
-	@echo "  uninstall  - Remove the binary from $(INSTALL_DIR)"
-	@echo "  clean      - Remove build artifacts"
-	@echo "  test       - Run tests"
-	@echo "  fmt        - Format code"
-	@echo "  vet        - Run go vet"
-	@echo "  lint       - Run golangci-lint"
-	@echo "  deps       - Download and tidy dependencies"
-	@echo "  help       - Show this help message"
+	@echo "  build               - Build the binary"
+	@echo "  install             - Install the binary to $(INSTALL_DIR) (may require sudo)"
+	@echo "  uninstall           - Remove the binary from $(INSTALL_DIR)"
+	@echo "  clean               - Remove build artifacts and coverage reports"
+	@echo "  test                - Run tests"
+	@echo "  test-coverage       - Run tests with coverage report"
+	@echo "  test-coverage-html  - Run tests with HTML coverage report"
+	@echo "  fmt                 - Format code"
+	@echo "  vet                 - Run go vet"
+	@echo "  lint                - Run golangci-lint"
+	@echo "  deps                - Download and tidy dependencies"
+	@echo "  help                - Show this help message"
 	@echo ""
 	@echo "Environment variables:"
 	@echo "  INSTALL_DIR - Installation directory (default: /usr/local/bin)"
