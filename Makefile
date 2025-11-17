@@ -1,4 +1,4 @@
-.PHONY: build install clean test test-coverage test-coverage-html fmt vet lint help package release-test
+.PHONY: build install clean test test-coverage test-coverage-html fmt vet lint help package release-test ci-test
 
 BINARY_NAME=apt-bundle
 BUILD_DIR=build
@@ -94,14 +94,49 @@ package: build
 		esac; \
 		CGO_ENABLED=0 GOOS=linux GOARCH=$$GOARCH GOARM=$$GOARM \
 			$(GO) build $(GOFLAGS) -o $(BUILD_DIR)/apt-bundle ./cmd/apt-bundle; \
+		NFPM_VERSION=$$VERSION NFPM_ARCH=$$arch \
 		nfpm package \
 			--config .nfpm.yaml \
 			--target dist/ \
-			--packager deb \
-			--version $$VERSION \
-			--arch $$arch || true; \
+			--packager deb || true; \
 	done
 	@echo "✓ Packages built in dist/"
+
+# Test CI build step locally (mimics GitHub Actions build job)
+# Usage: make ci-test [ARCH=amd64] [VERSION=0.1.0]
+ci-test:
+	@echo "Testing CI build step locally..."
+	@if ! command -v nfpm >/dev/null 2>&1; then \
+		echo "Installing nfpm..."; \
+		$(GO) install github.com/goreleaser/nfpm/v2/cmd/nfpm@latest; \
+	fi
+	@ARCH=$${ARCH:-amd64}; \
+	VERSION=$${VERSION:-$$(cat VERSION | tr -d '[:space:]').0}; \
+	case $$ARCH in \
+		amd64) GOARCH=amd64 GOARM= DEBARCH=amd64 ;; \
+		arm64) GOARCH=arm64 GOARM= DEBARCH=arm64 ;; \
+		armhf) GOARCH=arm GOARM=7 DEBARCH=armhf ;; \
+		i386) GOARCH=386 GOARM= DEBARCH=i386 ;; \
+		*) echo "Unknown architecture: $$ARCH"; exit 1 ;; \
+	esac; \
+	echo "Building for architecture: $$ARCH (GOARCH=$$GOARCH, DEBARCH=$$DEBARCH)"; \
+	echo "Version: $$VERSION"; \
+	mkdir -p build dist artifacts; \
+	CGO_ENABLED=0 GOOS=linux GOARCH=$$GOARCH GOARM=$$GOARM \
+		$(GO) build $(GOFLAGS) -o build/apt-bundle ./cmd/apt-bundle; \
+	NFPM_VERSION=$$VERSION NFPM_ARCH=$$DEBARCH \
+	nfpm package \
+		--config .nfpm.yaml \
+		--target dist/ \
+		--packager deb; \
+	PACKAGE_NAME=$$(ls dist/*.deb | head -1); \
+	NEW_NAME=$$(echo $$PACKAGE_NAME | sed "s/_linux_/_linux_$$DEBARCH_/"); \
+	if [ "$$PACKAGE_NAME" != "$$NEW_NAME" ]; then \
+		mv "$$PACKAGE_NAME" "$$NEW_NAME"; \
+	fi; \
+	echo "Created: $$NEW_NAME"; \
+	cp "$$NEW_NAME" artifacts/; \
+	echo "✓ CI test complete. Package: $$NEW_NAME"
 
 # Test release workflow locally (dry-run)
 release-test:
@@ -125,6 +160,7 @@ help:
 	@echo "  lint                - Run golangci-lint"
 	@echo "  deps                - Download and tidy dependencies"
 	@echo "  package             - Build .deb packages locally using nfpm"
+	@echo "  ci-test             - Test CI build step locally (mimics GitHub Actions)"
 	@echo "  release-test        - Test release workflow locally (dry-run)"
 	@echo "  help                - Show this help message"
 	@echo ""

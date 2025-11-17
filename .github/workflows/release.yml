@@ -110,6 +110,8 @@ jobs:
           GOARCH: ${{ matrix.goarch }}
           GOARM: ${{ matrix.goarm }}
           VERSION: ${{ needs.release.outputs.version }}
+          NFPM_VERSION: ${{ needs.release.outputs.version }}
+          NFPM_ARCH: ${{ matrix.debarch }}
         run: |
           # Build binary for this architecture
           mkdir -p build dist
@@ -120,9 +122,7 @@ jobs:
           nfpm package \
             --config .nfpm.yaml \
             --target dist/ \
-            --packager deb \
-            --version ${VERSION} \
-            --arch ${{ matrix.debarch }}
+            --packager deb
           
           # Rename to include architecture in filename
           PACKAGE_NAME=$(ls dist/*.deb | head -1)
