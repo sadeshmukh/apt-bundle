@@ -7,7 +7,6 @@ import (
 	"strings"
 )
 
-// EntryType represents the type of Aptfile directive
 type EntryType string
 
 const (
@@ -17,15 +16,13 @@ const (
 	EntryTypeKey EntryType = "key"
 )
 
-// Entry represents a single line in the Aptfile
 type Entry struct {
 	Type     EntryType
 	Value    string
 	LineNum  int
-	Original string // Original line for debugging
+	Original string
 }
 
-// Parse reads and parses an Aptfile, returning a slice of Entry objects
 func Parse(filePath string) ([]Entry, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -71,7 +68,6 @@ func Parse(filePath string) ([]Entry, error) {
 	return entries, nil
 }
 
-// parseLine parses a single line and returns an Entry
 func parseLine(line string, lineNum int, original string) (Entry, error) {
 	// Split by whitespace, respecting quotes
 	parts := splitRespectingQuotes(line)
@@ -105,7 +101,6 @@ func parseLine(line string, lineNum int, original string) (Entry, error) {
 	}, nil
 }
 
-// splitRespectingQuotes splits a string by whitespace while respecting quoted sections
 func splitRespectingQuotes(s string) []string {
 	var parts []string
 	var current strings.Builder
@@ -137,7 +132,6 @@ func splitRespectingQuotes(s string) []string {
 	return parts
 }
 
-// unquote removes surrounding quotes from a string
 func unquote(s string) string {
 	if len(s) >= 2 {
 		if (s[0] == '"' && s[len(s)-1] == '"') || (s[0] == '\'' && s[len(s)-1] == '\'') {

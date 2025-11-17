@@ -2,15 +2,12 @@ package apt
 
 import (
 	"fmt"
-	"os/exec"
 )
 
 // IsPackageInstalled checks if a package is installed on the system
 func IsPackageInstalled(packageName string) (bool, error) {
-	cmd := exec.Command("dpkg-query", "-W", "-f=${Status}", packageName)
-	output, err := cmd.Output()
+	output, err := runCommandWithOutput("dpkg-query", "-W", "-f=${Status}", packageName)
 	if err != nil {
-		// Package not found
 		return false, nil
 	}
 
@@ -22,12 +19,8 @@ func IsPackageInstalled(packageName string) (bool, error) {
 func InstallPackage(packageName string) error {
 	fmt.Printf("Installing package: %s\n", packageName)
 
-	cmd := exec.Command("apt-get", "install", "-y", packageName)
-	cmd.Stdout = nil // TODO: Wire up proper output handling
-	cmd.Stderr = nil
-
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("failed to install package %s: %w", packageName, err)
+	if err := runCommand("apt-get", "install", "-y", packageName); err != nil {
+		return wrapCommandError(err, "install package", packageName)
 	}
 
 	fmt.Printf("✓ Package %s installed successfully\n", packageName)
@@ -38,12 +31,8 @@ func InstallPackage(packageName string) error {
 func Update() error {
 	fmt.Println("Updating package lists...")
 
-	cmd := exec.Command("apt-get", "update")
-	cmd.Stdout = nil // TODO: Wire up proper output handling
-	cmd.Stderr = nil
-
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("failed to update package lists: %w", err)
+	if err := runCommand("apt-get", "update"); err != nil {
+		return wrapCommandError(err, "update package lists", "")
 	}
 
 	fmt.Println("✓ Package lists updated")
