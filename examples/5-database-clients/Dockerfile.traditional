@@ -5,6 +5,8 @@ ENV DEBIAN_FRONTEND=noninteractive
 # Install database clients and tools manually
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
+        curl \
+        ca-certificates \
         postgresql-client \
         mysql-client \
         redis-tools \
@@ -13,7 +15,6 @@ RUN apt-get update && \
         netcat-openbsd \
         tcpdump \
         strace \
-        curl \
         wget \
         dnsutils \
         iputils-ping \

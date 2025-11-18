@@ -6,8 +6,9 @@ ENV DEBIAN_FRONTEND=noninteractive
 # Install all packages manually
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-        build-essential \
         curl \
+        ca-certificates \
+        build-essential \
         git \
         vim \
         jq \

@@ -6,9 +6,10 @@ ENV DEBIAN_FRONTEND=noninteractive
 # Install build dependencies manually
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
+        curl \
+        ca-certificates \
         build-essential \
         git \
-        curl \
         pkg-config \
         libssl-dev && \
     apt-get clean && \
@@ -27,6 +28,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 # Install runtime dependencies only
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
+        curl \
         ca-certificates \
         libssl3 && \
     apt-get clean && \
