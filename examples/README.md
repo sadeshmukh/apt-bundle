@@ -12,22 +12,11 @@ FROM ubuntu:22.04
 # Prevent interactive prompts during apt operations
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install prerequisites for apt-bundle installation
+# Install prerequisites and apt-bundle
 RUN apt-get update && \
     apt-get install -y --no-install-recommends curl ca-certificates && \
-    rm -rf /var/lib/apt/lists/*
-
-# Install apt-bundle
-RUN ARCH=$(dpkg --print-architecture) && \
-    VERSION=$(curl -s https://api.github.com/repos/apt-bundle/apt-bundle/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/' || echo "") && \
-    if [ -z "$VERSION" ]; then echo "Error: Failed to fetch version" && exit 1; fi && \
-    VERSION_NO_V=${VERSION#v} && \
-    curl -LO https://github.com/apt-bundle/apt-bundle/releases/download/${VERSION}/apt-bundle_${VERSION_NO_V}_linux_${ARCH}.deb && \
-    dpkg -i apt-bundle_${VERSION_NO_V}_linux_${ARCH}.deb && \
-    apt-get update && \
-    apt-get install -f -y && \
-    rm apt-bundle_${VERSION_NO_V}_linux_${ARCH}.deb && \
-    apt-bundle --version
+    rm -rf /var/lib/apt/lists/* && \
+    curl -fsSL https://raw.githubusercontent.com/apt-bundle/apt-bundle/main/install.sh | bash
 
 # Copy Aptfile and install dependencies
 COPY Aptfile /app/Aptfile
@@ -102,7 +91,7 @@ make run
 
 All examples follow these patterns:
 
-1. **Install apt-bundle**: Download and install the `.deb` package
+1. **Install apt-bundle**: Use the install script for simple one-line installation
 2. **Copy Aptfile**: Place the Aptfile in the container
 3. **Run apt-bundle**: Install dependencies from the Aptfile
 4. **Clean up**: Remove apt cache to reduce image size (where applicable)
@@ -111,6 +100,6 @@ All examples follow these patterns:
 
 - All examples use `ubuntu:22.04` as the base image, but can be adapted for other Debian-based distributions
 - The `DEBIAN_FRONTEND=noninteractive` environment variable prevents interactive prompts during package installation
-- The apt-bundle installation uses the latest release from GitHub
+- The apt-bundle installation uses the install script which automatically fetches the latest release from GitHub
 - Each example can be customized to fit your specific needs
 
