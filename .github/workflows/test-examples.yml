@@ -7,8 +7,7 @@ on:
     paths:
       - 'examples/**'
       - '.github/workflows/test-examples.yml'
-    paths-ignore:
-      - '.cursor/**'
+      - '!.cursor/**'
 
 permissions:
   contents: read
