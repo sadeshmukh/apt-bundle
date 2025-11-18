@@ -1,0 +1,204 @@
+name: Generate GPG Key for Repository Signing
+
+on:
+  workflow_dispatch:
+    inputs:
+      regenerate:
+        description: 'Regenerate key even if it exists?'
+        required: false
+        default: 'false'
+        type: boolean
+
+permissions:
+  contents: write  # Needed to commit public key
+  # Note: Updating secrets requires a GitHub App token with secrets write permission
+  # The default GITHUB_TOKEN cannot modify secrets.
+
+jobs:
+  generate-key:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check prerequisites
+        run: |
+          if [ -z "${{ secrets.GPG_APP_ID }}" ]; then
+            echo "❌ Error: GPG_APP_ID secret is not set"
+            echo ""
+            echo "This workflow requires a GitHub App for managing secrets."
+            echo "Please see .github/workflows/scripts/README.md for setup instructions."
+            exit 1
+          fi
+          if [ -z "${{ secrets.GPG_APP_PRIVATE_KEY }}" ]; then
+            echo "❌ Error: GPG_APP_PRIVATE_KEY secret is not set"
+            echo ""
+            echo "This workflow requires a GitHub App for managing secrets."
+            echo "Please see .github/workflows/scripts/README.md for setup instructions."
+            exit 1
+          fi
+          echo "✓ GitHub App credentials are configured"
+
+      - name: Generate GitHub App token
+        id: app_token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.GPG_APP_ID }}
+          private-key: ${{ secrets.GPG_APP_PRIVATE_KEY }}
+
+      - name: Check if GPG key already exists
+        id: check_secret
+        if: inputs.regenerate != 'true'
+        env:
+          GITHUB_TOKEN: ${{ steps.app_token.outputs.token }}
+        run: |
+          if gh secret list | grep -q "GPG_PRIVATE_KEY"; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "⚠️  GPG_PRIVATE_KEY secret already exists!"
+            echo "Set 'regenerate' input to true if you want to regenerate the key."
+            exit 1
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "✓ No existing GPG key found, proceeding with generation"
+          fi
+
+      - name: Set up GPG
+        run: |
+          # Install GPG if not already available
+          sudo apt-get update
+          sudo apt-get install -y gnupg2
+
+      - name: Generate GPG key
+        run: |
+          echo "Generating GPG key for apt-bundle repository signing..."
+          gpg --batch --gen-key .github/workflows/scripts/gpg-keygen.conf
+          echo "✓ GPG key generated successfully"
+
+      - name: Extract key ID
+        id: key_info
+        run: |
+          # Use machine-readable format for robust parsing
+          KEY_ID=$(gpg --list-keys --keyid-format LONG --with-colons "maintainers@apt-bundle.org" | awk -F: '/^pub:/ {print $5; exit}')
+          
+          if [ -z "$KEY_ID" ]; then
+            echo "Error: Could not find GPG key for maintainers@apt-bundle.org"
+            exit 1
+          fi
+          
+          # Validate key ID format (should be 16 hex characters)
+          if ! echo "$KEY_ID" | grep -qE '^[0-9A-F]{16}$'; then
+            echo "Error: Invalid key ID format: ${KEY_ID}"
+            exit 1
+          fi
+          
+          # Extract last 8 characters (POSIX-compatible)
+          KEY_ID_SHORT=$(echo "${KEY_ID}" | tail -c 9)
+          
+          echo "key_id=${KEY_ID}" >> $GITHUB_OUTPUT
+          echo "key_id_short=${KEY_ID_SHORT}" >> $GITHUB_OUTPUT
+          
+          echo "✓ Key ID: ${KEY_ID}"
+          echo "✓ Key ID (short): ${KEY_ID_SHORT}"
+          
+          # Show fingerprint
+          echo ""
+          echo "Key fingerprint:"
+          gpg --fingerprint "${KEY_ID}"
+
+      - name: Export private key
+        id: export_private
+        run: |
+          KEY_ID="${{ steps.key_info.outputs.key_id }}"
+          
+          # Export private key (armored)
+          # Note: This key will be visible in step outputs and debug logs
+          # It's immediately stored as a secret and not persisted elsewhere
+          PRIVATE_KEY=$(gpg --armor --export-secret-keys "${KEY_ID}")
+          
+          if [ -z "$PRIVATE_KEY" ]; then
+            echo "Error: Failed to export private key"
+            exit 1
+          fi
+          
+          # Store in output (will be used to update secret)
+          echo "private_key<<EOF" >> $GITHUB_OUTPUT
+          echo "${PRIVATE_KEY}" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          
+          echo "✓ Private key exported"
+
+      - name: Update GitHub Secret (GPG_PRIVATE_KEY)
+        env:
+          GITHUB_TOKEN: ${{ steps.app_token.outputs.token }}
+        run: |
+          echo "${{ steps.export_private.outputs.private_key }}" | gh secret set GPG_PRIVATE_KEY
+          echo "✓ Updated GitHub Secret: GPG_PRIVATE_KEY"
+
+      - name: Update GitHub Secret (GPG_KEY_ID)
+        env:
+          GITHUB_TOKEN: ${{ steps.app_token.outputs.token }}
+        run: |
+          echo "${{ steps.key_info.outputs.key_id_short }}" | gh secret set GPG_KEY_ID
+          echo "✓ Updated GitHub Secret: GPG_KEY_ID"
+
+      - name: Export public key
+        run: |
+          KEY_ID="${{ steps.key_info.outputs.key_id }}"
+          
+          # Create repo directory if it doesn't exist
+          mkdir -p repo
+          
+          # Export public key
+          gpg --armor --export "${KEY_ID}" > repo/public.key
+          
+          # Validate export succeeded
+          if [ ! -s repo/public.key ]; then
+            echo "Error: Public key export failed or file is empty"
+            exit 1
+          fi
+          
+          echo "✓ Public key exported to repo/public.key"
+          echo ""
+          echo "Public key content:"
+          cat repo/public.key
+
+      - name: Commit public key
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          git add repo/public.key
+          
+          if git diff --staged --quiet; then
+            echo "No changes to commit (public key already exists)"
+          else
+            git commit -m "chore: Add GPG public key for repository signing
+
+            Generated by GitHub Actions workflow.
+            Key ID: ${{ steps.key_info.outputs.key_id_short }}
+            
+            This key is used to sign the apt-bundle Debian repository."
+            git push
+            echo "✓ Public key committed to repository"
+          fi
+
+      - name: Summary
+        run: |
+          echo "## GPG Key Generation Complete ✅" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Key ID:** \`${{ steps.key_info.outputs.key_id }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Key ID (short):** \`${{ steps.key_info.outputs.key_id_short }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### What was done:" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ GPG key generated" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ GitHub Secret \`GPG_PRIVATE_KEY\` updated" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ GitHub Secret \`GPG_KEY_ID\` updated" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Public key committed to \`repo/public.key\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Next steps:" >> $GITHUB_STEP_SUMMARY
+          echo "1. Verify the public key is available at: \`repo/public.key\`" >> $GITHUB_STEP_SUMMARY
+          echo "2. The Debian repository publishing workflow can now use these secrets" >> $GITHUB_STEP_SUMMARY
+          echo "3. Users can import the public key from: \`https://apt-bundle.org/public.key\`" >> $GITHUB_STEP_SUMMARY
+
