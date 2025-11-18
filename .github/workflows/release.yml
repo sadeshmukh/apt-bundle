@@ -157,15 +157,28 @@ jobs:
           
           echo "Created: dist/${EXPECTED_NAME}"
           
-          # Upload artifact for later collection
+          # Prepare static binary with proper naming
+          BINARY_NAME="apt-bundle_${VERSION}_linux_${NFPM_ARCH}"
+          cp "build/apt-bundle" "build/${BINARY_NAME}"
+          chmod +x "build/${BINARY_NAME}"
+          
+          # Upload artifacts for later collection
           mkdir -p artifacts
           cp "dist/${EXPECTED_NAME}" artifacts/
+          cp "build/${BINARY_NAME}" artifacts/
 
       - name: Upload packages as artifacts
         uses: actions/upload-artifact@v4
         with:
           name: deb-packages-${{ matrix.debarch }}
           path: artifacts/*.deb
+          retention-days: 1
+      
+      - name: Upload binaries as artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: binaries-${{ matrix.debarch }}
+          path: artifacts/apt-bundle_*_linux_${{ matrix.debarch }}
           retention-days: 1
 
   create-release:
@@ -186,6 +199,13 @@ jobs:
           pattern: deb-packages-*
           path: packages
           merge-multiple: true
+      
+      - name: Download binaries
+        uses: actions/download-artifact@v4
+        with:
+          pattern: binaries-*
+          path: binaries
+          merge-multiple: true
 
       - name: Verify all packages downloaded
         run: |
@@ -201,11 +221,28 @@ jobs:
           
           echo "All packages present:"
           ls -lh packages/*.deb
+          
+          echo ""
+          echo "Checking for binaries..."
+          BINARY_COUNT=$(find binaries -type f -name "apt-bundle_*" | wc -l)
+          echo "Found ${BINARY_COUNT} binaries"
+          
+          if [ "$BINARY_COUNT" -ne 4 ]; then
+            echo "Error: Expected 4 binaries (amd64, arm64, armhf, i386), found ${BINARY_COUNT}"
+            ls -la binaries/
+            exit 1
+          fi
+          
+          echo "All binaries present:"
+          ls -lh binaries/apt-bundle_*
 
       - name: Generate checksums
         run: |
           cd packages
-          sha256sum *.deb > SHA256SUMS
+          sha256sum *.deb > ../SHA256SUMS
+          cd ../binaries
+          sha256sum apt-bundle_* >> ../SHA256SUMS
+          cd ..
           cat SHA256SUMS
 
       - name: Generate release notes
@@ -231,15 +268,34 @@ jobs:
           echo "" >> release-notes.md
           echo "## Packages" >> release-notes.md
           echo "" >> release-notes.md
+          echo "### Debian Packages (.deb)" >> release-notes.md
+          echo "" >> release-notes.md
           echo "| Architecture | File | Size |" >> release-notes.md
           echo "|-------------|------|------|" >> release-notes.md
           ls -lh packages/*.deb | awk '{print "| " gensub(/.*_linux_([^.]+)\.deb/, "\\1", "g", $9) " | " $9 " | " $5 " |"}' >> release-notes.md
           
           echo "" >> release-notes.md
+          echo "### Static Binaries" >> release-notes.md
+          echo "" >> release-notes.md
+          echo "| Architecture | File | Size |" >> release-notes.md
+          echo "|-------------|------|------|" >> release-notes.md
+          ls -lh binaries/apt-bundle_* | awk '{print "| " gensub(/.*_linux_([^[:space:]]+)$/, "\\1", "g", $9) " | " $9 " | " $5 " |"}' >> release-notes.md
+          
+          echo "" >> release-notes.md
           echo "## Installation" >> release-notes.md
           echo "" >> release-notes.md
+          echo "### Using Install Script (Recommended)" >> release-notes.md
+          echo "" >> release-notes.md
           echo '```bash' >> release-notes.md
-          echo 'curl -sSL https://apt-bundle.github.io/install.sh | sudo bash' >> release-notes.md
+          echo 'curl -fsSL https://raw.githubusercontent.com/apt-bundle/apt-bundle/main/install.sh | sudo bash' >> release-notes.md
+          echo '```' >> release-notes.md
+          echo "" >> release-notes.md
+          echo "### Using Static Binary" >> release-notes.md
+          echo "" >> release-notes.md
+          echo '```bash' >> release-notes.md
+          echo "# Replace ARCH with your architecture (amd64, arm64, armhf, or i386)" >> release-notes.md
+          echo "curl -fsSL https://github.com/apt-bundle/apt-bundle/releases/download/${TAG}/apt-bundle_${VERSION}_linux_ARCH -o /usr/local/bin/apt-bundle" >> release-notes.md
+          echo "chmod +x /usr/local/bin/apt-bundle" >> release-notes.md
           echo '```' >> release-notes.md
           
           echo "Generated release notes:"
@@ -259,12 +315,13 @@ jobs:
             exit 0
           fi
           
-          # Create release with all packages and checksums
+          # Create release with all packages, binaries, and checksums
           gh release create "${TAG}" \
             --title "apt-bundle ${VERSION}" \
             --notes-file release-notes.md \
             packages/*.deb \
-            packages/SHA256SUMS \
+            binaries/apt-bundle_* \
+            SHA256SUMS \
             --repo "${GITHUB_REPOSITORY}"
           
           echo "## Release Summary" >> $GITHUB_STEP_SUMMARY
@@ -272,11 +329,14 @@ jobs:
           echo "- Tag: ${TAG}" >> $GITHUB_STEP_SUMMARY
           echo "- Release URL: https://github.com/${GITHUB_REPOSITORY}/releases/tag/${TAG}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Packages" >> $GITHUB_STEP_SUMMARY
+          echo "### Debian Packages" >> $GITHUB_STEP_SUMMARY
           ls -lh packages/*.deb | awk '{print "- " $9 " (" $5 ")"}' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Static Binaries" >> $GITHUB_STEP_SUMMARY
+          ls -lh binaries/apt-bundle_* | awk '{print "- " $9 " (" $5 ")"}' >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Checksums" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-          cat packages/SHA256SUMS >> $GITHUB_STEP_SUMMARY
+          cat SHA256SUMS >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
 
