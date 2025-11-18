@@ -145,18 +145,7 @@ sudo apt-bundle
 
 ### Dockerfile
 
-```dockerfile
-FROM ubuntu:22.04
-
-# Install apt-bundle
-RUN curl -L https://github.com/apt-bundle/apt-bundle/releases/latest/download/apt-bundle -o /usr/local/bin/apt-bundle && \
-    chmod +x /usr/local/bin/apt-bundle
-
-# Copy Aptfile and install dependencies
-COPY Aptfile /app/Aptfile
-WORKDIR /app
-RUN apt-bundle
-```
+Use `apt-bundle` in your Dockerfiles to manage system dependencies declaratively. See the [examples directory](../../examples/) for complete working examples including multi-stage builds, Python runtimes, CI/CD setups, and more.
 
 ### CI/CD Validation
 

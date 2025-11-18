@@ -170,22 +170,7 @@ sudo apt-bundle
 
 ### Dockerfile
 
-```dockerfile
-FROM ubuntu:22.04
-
-# Install apt-bundle
-RUN ARCH=$(dpkg --print-architecture) && \
-    VERSION=$(curl -s https://api.github.com/repos/apt-bundle/apt-bundle/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/') && \
-    curl -LO https://github.com/apt-bundle/apt-bundle/releases/download/${VERSION}/apt-bundle_${VERSION#v}_linux_${ARCH}.deb && \
-    dpkg -i apt-bundle_${VERSION#v}_linux_${ARCH}.deb && \
-    apt-get install -f -y && \
-    rm apt-bundle_${VERSION#v}_linux_${ARCH}.deb
-
-# Copy Aptfile and install dependencies
-COPY Aptfile /app/Aptfile
-WORKDIR /app
-RUN apt-bundle
-```
+Use `apt-bundle` in your Dockerfiles to manage system dependencies declaratively. See the [examples directory](examples/) for complete working examples including multi-stage builds, Python runtimes, CI/CD setups, and more.
 
 ### System Sync
 
