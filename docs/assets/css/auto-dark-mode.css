@@ -1,0 +1,175 @@
+/* Auto dark mode for TeXt theme using prefers-color-scheme */
+
+@media (prefers-color-scheme: dark) {
+  /* Dark mode color variables matching TeXt's dark skin */
+  :root {
+    --text-color: #c9d1d9;
+    --background-color: #0d1117;
+    --border-color: #30363d;
+    --code-background-color: #161b22;
+    --code-text-color: #c9d1d9;
+    --link-color: #58a6ff;
+    --link-hover-color: #79c0ff;
+    --muted-text-color: #8b949e;
+    --header-background: #161b22;
+    --footer-background: #161b22;
+  }
+  
+  /* Apply dark background to body */
+  body {
+    background-color: var(--background-color) !important;
+    color: var(--text-color) !important;
+  }
+  
+  /* Site header and navigation */
+  .site-header,
+  .site-nav,
+  .site-footer {
+    background-color: var(--header-background) !important;
+    border-color: var(--border-color) !important;
+  }
+  
+  /* Navigation links */
+  .site-nav a,
+  .site-header a {
+    color: var(--text-color) !important;
+  }
+  
+  .site-nav a:hover,
+  .site-header a:hover {
+    color: var(--link-color) !important;
+  }
+  
+  /* Main content area */
+  .main-content {
+    background-color: var(--background-color) !important;
+    color: var(--text-color) !important;
+  }
+  
+  /* Headings */
+  h1, h2, h3, h4, h5, h6 {
+    color: var(--text-color) !important;
+  }
+  
+  h1 {
+    border-bottom-color: var(--border-color) !important;
+  }
+  
+  /* Links */
+  a {
+    color: var(--link-color) !important;
+  }
+  
+  a:hover {
+    color: var(--link-hover-color) !important;
+  }
+  
+  /* Code blocks and inline code */
+  .highlight,
+  pre,
+  code {
+    background-color: var(--code-background-color) !important;
+    color: var(--code-text-color) !important;
+    border-color: var(--border-color) !important;
+  }
+  
+  /* Inline code */
+  code:not(pre code) {
+    background-color: var(--code-background-color) !important;
+    color: var(--code-text-color) !important;
+  }
+  
+  /* Tables */
+  table {
+    border-color: var(--border-color) !important;
+  }
+  
+  th {
+    background-color: var(--code-background-color) !important;
+    color: var(--text-color) !important;
+  }
+  
+  td {
+    border-color: var(--border-color) !important;
+    color: var(--text-color) !important;
+  }
+  
+  tr:hover {
+    background-color: var(--code-background-color) !important;
+  }
+  
+  /* Blockquotes */
+  blockquote {
+    border-left-color: var(--border-color) !important;
+    color: var(--muted-text-color) !important;
+    background-color: var(--code-background-color) !important;
+  }
+  
+  /* Horizontal rules */
+  hr {
+    border-color: var(--border-color) !important;
+  }
+  
+  /* Search box */
+  .search-input,
+  input[type="search"],
+  input[type="text"] {
+    background-color: var(--code-background-color) !important;
+    color: var(--text-color) !important;
+    border-color: var(--border-color) !important;
+  }
+  
+  /* Buttons */
+  button,
+  .btn {
+    background-color: var(--code-background-color) !important;
+    color: var(--text-color) !important;
+    border-color: var(--border-color) !important;
+  }
+  
+  button:hover,
+  .btn:hover {
+    background-color: var(--border-color) !important;
+  }
+  
+  /* Lists */
+  ul, ol {
+    color: var(--text-color) !important;
+  }
+  
+  /* Muted/secondary text */
+  .muted,
+  .text-muted {
+    color: var(--muted-text-color) !important;
+  }
+  
+  /* Cards and panels */
+  .card,
+  .panel {
+    background-color: var(--code-background-color) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-color) !important;
+  }
+  
+  /* Footer */
+  .site-footer {
+    background-color: var(--footer-background) !important;
+    color: var(--muted-text-color) !important;
+  }
+  
+  /* Sidebar */
+  .sidebar {
+    background-color: var(--header-background) !important;
+    border-color: var(--border-color) !important;
+  }
+  
+  /* Selection */
+  ::selection {
+    background-color: rgba(88, 166, 255, 0.3) !important;
+  }
+  
+  ::-moz-selection {
+    background-color: rgba(88, 166, 255, 0.3) !important;
+  }
+}
+

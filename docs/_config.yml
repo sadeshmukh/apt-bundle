@@ -4,13 +4,16 @@ url: https://apt-bundle.org
 baseurl: ""
 
 # Theme
-remote_theme: just-the-docs/just-the-docs
+remote_theme: kitian616/jekyll-TeXt-theme
 
 # Plugins
 plugins:
   - jekyll-feed
   - jekyll-seo-tag
   - jekyll-remote-theme
+
+# TeXt Theme Configuration
+text_skin: default
 
 # Exclude from processing
 exclude:
@@ -32,10 +35,4 @@ aux_links:
 
 # Footer content
 footer_content: "Released under the MIT License"
-
-# Color scheme
-color_scheme: light
-
-# Search
-search_enabled: true
 
