@@ -3,8 +3,13 @@ package commands
 import (
 	"fmt"
 
+	"github.com/apt-bundle/apt-bundle/internal/apt"
 	"github.com/apt-bundle/apt-bundle/internal/aptfile"
 	"github.com/spf13/cobra"
+)
+
+var (
+	noUpdate bool
 )
 
 var installCmd = &cobra.Command{
@@ -12,12 +17,13 @@ var installCmd = &cobra.Command{
 	Short: "Install packages and repositories from Aptfile",
 	Long: `Read the Aptfile and perform the following operations:
 1. Add all specified repositories and keys
-2. Run apt-get update
+2. Run apt-get update (unless --no-update is specified)
 3. Install all specified packages`,
 	RunE: runInstall,
 }
 
 func init() {
+	rootCmd.PersistentFlags().BoolVar(&noUpdate, "no-update", false, "Skip updating package lists before installing")
 	rootCmd.AddCommand(installCmd)
 	// Make install the default command
 	rootCmd.RunE = runInstall
@@ -43,7 +49,12 @@ func runInstall(cmd *cobra.Command, args []string) error {
 	// 1. Process all 'key' directives
 	// 2. Process all 'ppa' directives
 	// 3. Process all 'deb' directives
-	// 4. Run apt-get update
+	// 4. Run apt-get update (unless --no-update is specified)
+	if !noUpdate {
+		if err := apt.Update(); err != nil {
+			return fmt.Errorf("failed to update package lists: %w", err)
+		}
+	}
 	// 5. Process all 'apt' directives to install packages
 
 	return nil

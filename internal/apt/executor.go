@@ -40,4 +40,3 @@ func wrapCommandError(err error, operation, target string) error {
 	}
 	return nil
 }
-

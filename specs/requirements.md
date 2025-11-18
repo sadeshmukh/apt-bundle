@@ -18,7 +18,8 @@ To create a lightweight, command-line tool apt-bundle that provides a simple, de
 * The tool MUST install a list of packages specified in the Aptfile.  
 * The tool MUST be idempotent: if a package is already installed, it should not be re-installed.  
 * The tool MUST support specifying exact package versions (e.g., package=version) in the Aptfile.  
-* The tool MUST run apt-get update (or equivalent) before installing packages if new repositories are added.
+* The tool MUST run apt-get update (or equivalent) before installing packages by default to ensure fresh package lists.  
+* The tool MUST provide a `--no-update` flag to skip updating package lists when they are already up-to-date (e.g., in CI/CD environments).
 
 ### **FR3: Repository Management**
 
@@ -31,7 +32,7 @@ To create a lightweight, command-line tool apt-bundle that provides a simple, de
 
 * **install (default):** The default command (e.g., apt-bundle or apt-bundle install). It reads the Aptfile and performs the following:  
   1. Adds all specified repositories and keys.  
-  2. Runs apt-get update.  
+  2. Runs apt-get update (by default, can be skipped with `--no-update` flag).  
   3. Installs all specified packages.  
 * **dump:** Generates an Aptfile from the system's current state.  
   1. It MUST output a list of all manually installed packages.  

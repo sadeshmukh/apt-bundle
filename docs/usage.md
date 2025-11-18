@@ -26,7 +26,7 @@ sudo apt-bundle install --file /path/to/Aptfile
 
 The `install` command:
 1. Adds all specified repositories and GPG keys
-2. Runs `apt-get update`
+2. Runs `apt-get update` (by default, can be skipped with `--no-update`)
 3. Installs all specified packages
 
 **Note:** The `install` command requires root privileges (use `sudo`).
@@ -67,6 +67,10 @@ This command outputs a list of manually installed packages. Future versions may 
 - `--help, -h`: Show help information
 - `--version`: Show version information
 
+### Install Command Flags
+
+- `--no-update`: Skip updating package lists before installing packages. By default, `apt-bundle` runs `apt-get update` to ensure fresh package lists.
+
 ## Examples
 
 ### Basic Package Installation
@@ -90,6 +94,14 @@ sudo apt-bundle
 
 ```bash
 sudo apt-bundle --file /etc/myproject/Aptfile
+```
+
+### Skipping Package List Update
+
+If your package lists are already up-to-date (e.g., in CI/CD where you've already run `apt-get update`):
+
+```bash
+sudo apt-bundle --no-update
 ```
 
 ### Checking Before Installing

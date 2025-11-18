@@ -81,6 +81,9 @@ sudo apt-bundle install
 # Use a different Aptfile
 sudo apt-bundle --file /path/to/Aptfile
 
+# Skip updating package lists (useful in CI/CD)
+sudo apt-bundle --no-update
+
 # Check if packages are installed (no root required)
 apt-bundle check
 

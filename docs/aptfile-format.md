@@ -150,10 +150,10 @@ When `apt-bundle install` runs, it processes directives in the following order:
 1. All `key` directives (add GPG keys)
 2. All `ppa` directives (add PPAs)
 3. All `deb` directives (add repositories)
-4. Run `apt-get update`
+4. Run `apt-get update` (by default, can be skipped with `--no-update` flag)
 5. All `apt` directives (install packages)
 
-This ensures that repositories and keys are set up before attempting to install packages.
+This ensures that repositories and keys are set up before attempting to install packages. The package list update runs by default to ensure fresh package information, but can be skipped using the `--no-update` flag if your package lists are already up-to-date (e.g., in CI/CD environments).
 
 ## Best Practices
 
