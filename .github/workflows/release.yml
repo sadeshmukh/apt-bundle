@@ -25,6 +25,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
+          cache: true
 
       - name: Read VERSION file
         id: version
@@ -100,6 +101,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
+          cache: true
 
       - name: Install nfpm
         run: |
@@ -118,23 +120,41 @@ jobs:
           CGO_ENABLED=0 GOOS=linux GOARCH=${GOARCH} GOARM=${GOARM} \
             go build -ldflags="-s -w" -o build/apt-bundle ./cmd/apt-bundle
           
+          # Substitute template variables in nfpm config
+          # nfpm v2 doesn't automatically process {{ .Version }} and {{ .Arch }} templates
+          # from environment variables, so we substitute them manually
+          sed -e "s|{{ .Version }}|${VERSION}|g" \
+              -e "s|{{ .Arch }}|${NFPM_ARCH}|g" \
+              .nfpm.yaml > .nfpm-${NFPM_ARCH}.yaml
+          
           # Create .deb package
           nfpm package \
-            --config .nfpm.yaml \
+            --config .nfpm-${NFPM_ARCH}.yaml \
             --target dist/ \
             --packager deb
           
-          # Rename to include architecture in filename
-          PACKAGE_NAME=$(ls dist/*.deb | head -1)
-          NEW_NAME=$(echo $PACKAGE_NAME | sed "s/_linux_/_linux_${{ matrix.debarch }}_/")
-          if [ "$PACKAGE_NAME" != "$NEW_NAME" ]; then
-            mv "$PACKAGE_NAME" "$NEW_NAME"
+          # Clean up temporary config
+          rm .nfpm-${NFPM_ARCH}.yaml
+          
+          # Rename package to expected format: apt-bundle_VERSION_linux_ARCH.deb
+          ACTUAL_PACKAGE=$(find dist -maxdepth 1 -name "*.deb" -type f | head -1)
+          
+          if [ -z "$ACTUAL_PACKAGE" ]; then
+            echo "Error: No .deb package found in dist/"
+            exit 1
           fi
-          echo "Created: $NEW_NAME"
+          
+          EXPECTED_NAME="apt-bundle_${VERSION}_linux_${NFPM_ARCH}.deb"
+          
+          if [ "$(basename "$ACTUAL_PACKAGE")" != "$EXPECTED_NAME" ]; then
+            mv "$ACTUAL_PACKAGE" "dist/${EXPECTED_NAME}"
+          fi
+          
+          echo "Created: dist/${EXPECTED_NAME}"
           
           # Upload artifact for later collection
           mkdir -p artifacts
-          cp "$NEW_NAME" artifacts/
+          cp "dist/${EXPECTED_NAME}" artifacts/
 
       - name: Upload packages as artifacts
         uses: actions/upload-artifact@v4
@@ -157,14 +177,68 @@ jobs:
           path: packages
           merge-multiple: true
 
-      - name: Install GitHub CLI
+      - name: Verify all packages downloaded
         run: |
-          type -p curl >/dev/null || sudo apt install curl -y
-          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
-          sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
-          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
-          sudo apt update
-          sudo apt install gh -y
+          echo "Checking for packages..."
+          PACKAGE_COUNT=$(find packages -name "*.deb" -type f | wc -l)
+          echo "Found ${PACKAGE_COUNT} packages"
+          
+          if [ "$PACKAGE_COUNT" -ne 4 ]; then
+            echo "Error: Expected 4 packages (amd64, arm64, armhf, i386), found ${PACKAGE_COUNT}"
+            ls -la packages/
+            exit 1
+          fi
+          
+          echo "All packages present:"
+          ls -lh packages/*.deb
+
+      - name: Generate checksums
+        run: |
+          cd packages
+          sha256sum *.deb > SHA256SUMS
+          cat SHA256SUMS
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate release notes
+        run: |
+          TAG="${{ needs.release.outputs.tag }}"
+          VERSION="${{ needs.release.outputs.version }}"
+          
+          # Find previous tag
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          
+          echo "# Release ${VERSION}" > release-notes.md
+          echo "" >> release-notes.md
+          
+          if [ -n "$PREV_TAG" ]; then
+            echo "## Changes since ${PREV_TAG}" >> release-notes.md
+            echo "" >> release-notes.md
+            git log ${PREV_TAG}..HEAD --pretty=format:"- %s (%an)" --no-merges >> release-notes.md
+          else
+            echo "Initial release of apt-bundle" >> release-notes.md
+          fi
+          
+          echo "" >> release-notes.md
+          echo "" >> release-notes.md
+          echo "## Packages" >> release-notes.md
+          echo "" >> release-notes.md
+          echo "| Architecture | File | Size |" >> release-notes.md
+          echo "|-------------|------|------|" >> release-notes.md
+          ls -lh packages/*.deb | awk '{print "| " gensub(/.*_linux_([^.]+)\.deb/, "\\1", "g", $9) " | " $9 " | " $5 " |"}' >> release-notes.md
+          
+          echo "" >> release-notes.md
+          echo "## Installation" >> release-notes.md
+          echo "" >> release-notes.md
+          echo '```bash' >> release-notes.md
+          echo 'curl -sSL https://apt-bundle.github.io/install.sh | sudo bash' >> release-notes.md
+          echo '```' >> release-notes.md
+          
+          echo "Generated release notes:"
+          cat release-notes.md
 
       - name: Create GitHub Release
         env:
@@ -173,16 +247,31 @@ jobs:
           TAG="${{ needs.release.outputs.tag }}"
           VERSION="${{ needs.release.outputs.version }}"
           
-          # Create release with all packages
+          # Check if release already exists (race condition protection)
+          if gh release view "${TAG}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            echo "Release ${TAG} already exists (race condition detected)"
+            echo "This is expected if multiple jobs tried to create the same release"
+            exit 0
+          fi
+          
+          # Create release with all packages and checksums
           gh release create "${TAG}" \
             --title "apt-bundle ${VERSION}" \
-            --notes "Release ${VERSION} of apt-bundle" \
+            --notes-file release-notes.md \
             packages/*.deb \
+            packages/SHA256SUMS \
             --repo "${GITHUB_REPOSITORY}"
           
           echo "## Release Summary" >> $GITHUB_STEP_SUMMARY
           echo "- Version: ${VERSION}" >> $GITHUB_STEP_SUMMARY
           echo "- Tag: ${TAG}" >> $GITHUB_STEP_SUMMARY
-          echo "- Packages created:" >> $GITHUB_STEP_SUMMARY
-          ls -lh packages/*.deb | awk '{print "  - " $9 " (" $5 ")"}' >> $GITHUB_STEP_SUMMARY
+          echo "- Release URL: https://github.com/${GITHUB_REPOSITORY}/releases/tag/${TAG}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Packages" >> $GITHUB_STEP_SUMMARY
+          ls -lh packages/*.deb | awk '{print "- " $9 " (" $5 ")"}' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Checksums" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat packages/SHA256SUMS >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
 

@@ -31,7 +31,7 @@ jobs:
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: '3.1'
+          ruby-version-file: ./docs/.ruby-version
           bundler-cache: true
           working-directory: ./docs
 
@@ -45,6 +45,21 @@ jobs:
           bundle exec jekyll build --baseurl "${{ steps.pages.outputs.base_path }}"
         env:
           JEKYLL_ENV: production
+
+      - name: Validate build
+        run: |
+          if [ ! -d "docs/_site" ]; then
+            echo "Error: Build failed - _site directory not created"
+            exit 1
+          fi
+          
+          if [ ! -f "docs/_site/index.html" ]; then
+            echo "Error: Build failed - index.html not found"
+            exit 1
+          fi
+          
+          echo "Build validation passed"
+          echo "Site contains $(find docs/_site -type f | wc -l) files"
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
