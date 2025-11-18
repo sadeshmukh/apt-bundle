@@ -1,0 +1,7 @@
+# Build dependencies
+apt build-essential
+apt git
+apt curl
+apt pkg-config
+apt libssl-dev
+

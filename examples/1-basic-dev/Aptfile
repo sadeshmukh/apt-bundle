@@ -1,0 +1,12 @@
+# Development tools
+apt build-essential
+apt curl
+apt git
+apt vim
+apt jq
+apt htop
+
+# Network tools
+apt wget
+apt net-tools
+
