@@ -33,8 +33,8 @@ aux_links:
 # Footer content
 footer_content: "Released under the MIT License"
 
-# Color scheme - auto detects system preference for light/dark mode
-color_scheme: auto
+# Color scheme - use nil for default, or specify: light, dark
+# color_scheme: light
 
 # Search
 search_enabled: true
