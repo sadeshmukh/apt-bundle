@@ -6,6 +6,9 @@ on:
       - main
     paths-ignore:
       - 'examples/**'
+      - '.cursor/**'
+      - 'docs/**'
+      - '**.md'
 
 permissions:
   contents: write

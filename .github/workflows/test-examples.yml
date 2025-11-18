@@ -1,0 +1,126 @@
+name: Test Examples
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'examples/**'
+      - '.github/workflows/test-examples.yml'
+    paths-ignore:
+      - '.cursor/**'
+
+permissions:
+  contents: read
+
+jobs:
+  test-examples:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - example: 1-basic-dev
+            dockerfile: Dockerfile
+            validation: "git --version && vim --version && jq --version && which htop && curl --version"
+          - example: 1-basic-dev
+            dockerfile: Dockerfile.traditional
+            validation: "git --version && vim --version && jq --version && which htop && curl --version"
+          - example: 2-multi-stage
+            dockerfile: Dockerfile
+            validation: "ls -la /etc/ssl/certs/ca-certificates.crt && ldconfig -p | grep libssl"
+          - example: 2-multi-stage
+            dockerfile: Dockerfile.traditional
+            validation: "ls -la /etc/ssl/certs/ca-certificates.crt && ldconfig -p | grep libssl"
+          - example: 3-python-runtime
+            dockerfile: Dockerfile
+            validation: "python3 --version && dpkg -l | grep -q libjpeg-dev && dpkg -l | grep -q libpq-dev && pip3 --version"
+          - example: 3-python-runtime
+            dockerfile: Dockerfile.traditional
+            validation: "python3 --version && dpkg -l | grep -q libjpeg-dev && dpkg -l | grep -q libpq-dev && pip3 --version"
+          - example: 4-ci-cd
+            dockerfile: Dockerfile
+            validation: "git --version && shellcheck --version && jq --version && docker --version"
+          - example: 4-ci-cd
+            dockerfile: Dockerfile.traditional
+            validation: "git --version && shellcheck --version && jq --version && docker --version"
+          - example: 5-database-clients
+            dockerfile: Dockerfile
+            validation: "psql --version && mysql --version && redis-cli --version && which mongodump"
+          - example: 5-database-clients
+            dockerfile: Dockerfile.traditional
+            validation: "psql --version && mysql --version && redis-cli --version && which mongodump"
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup build artifacts for multi-stage example
+        if: matrix.example == '2-multi-stage'
+        working-directory: examples/${{ matrix.example }}
+        run: |
+          # Create a Makefile.build that creates the required binary
+          # The Dockerfile runs 'make build', so we ensure this target exists
+          cat > Makefile.build << 'EOF'
+build:
+	mkdir -p bin
+	echo '#!/bin/bash' > bin/myapp
+	echo 'echo "Hello from myapp"' >> bin/myapp
+	chmod +x bin/myapp
+EOF
+          # If Makefile exists, rename it and use Makefile.build
+          # Otherwise, just use Makefile.build as Makefile
+          if [ -f Makefile ]; then
+            mv Makefile Makefile.docker
+            mv Makefile.build Makefile
+          else
+            mv Makefile.build Makefile
+          fi
+
+      - name: Setup requirements.txt for python-runtime example
+        if: matrix.example == '3-python-runtime'
+        working-directory: examples/${{ matrix.example }}
+        run: |
+          # Create a minimal requirements.txt if it doesn't exist
+          if [ ! -f requirements.txt ]; then
+            echo "# Minimal requirements for testing" > requirements.txt
+            echo "flask==2.3.0" >> requirements.txt
+          fi
+          # Create a minimal app.py if it doesn't exist
+          if [ ! -f app.py ]; then
+            echo "#!/usr/bin/env python3" > app.py
+            echo "print('Hello from Python app')" >> app.py
+            chmod +x app.py
+          fi
+
+      - name: Setup scripts directory for database-clients example
+        if: matrix.example == '5-database-clients'
+        working-directory: examples/${{ matrix.example }}
+        run: |
+          # Create a minimal scripts directory if it doesn't exist
+          if [ ! -d scripts ]; then
+            mkdir -p scripts
+            echo "#!/bin/bash" > scripts/test.sh
+            echo "echo 'Database tools available'" >> scripts/test.sh
+            chmod +x scripts/test.sh
+          fi
+
+      - name: Build Docker image
+        working-directory: examples/${{ matrix.example }}
+        run: |
+          IMAGE_NAME="${{ matrix.example }}"
+          IMAGE_TAG="test-${{ matrix.dockerfile }}"
+          docker build -f ${{ matrix.dockerfile }} -t ${IMAGE_NAME}:${IMAGE_TAG} .
+          echo "IMAGE_NAME=${IMAGE_NAME}" >> $GITHUB_ENV
+          echo "IMAGE_TAG=${IMAGE_TAG}" >> $GITHUB_ENV
+
+      - name: Validate packages
+        run: |
+          docker run --rm ${IMAGE_NAME}:${IMAGE_TAG} bash -c "${{ matrix.validation }}"
+          echo "✓ Validation passed for ${{ matrix.example }} using ${{ matrix.dockerfile }}"
+
+      - name: Verify apt-bundle (for Dockerfile only)
+        if: matrix.dockerfile == 'Dockerfile'
+        run: |
+          docker run --rm ${IMAGE_NAME}:${IMAGE_TAG} apt-bundle --version
+          echo "✓ apt-bundle verified for ${{ matrix.example }}"
+

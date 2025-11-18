@@ -7,6 +7,8 @@ on:
     paths:
       - 'docs/**'
       - '.github/workflows/deploy-pages.yml'
+    paths-ignore:
+      - '.cursor/**'
   workflow_dispatch:
 
 permissions:
