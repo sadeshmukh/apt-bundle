@@ -25,10 +25,10 @@ jobs:
           - example: 1-basic-dev
             dockerfile: Dockerfile.traditional
             validation: "git --version && vim --version && jq --version && which htop && curl --version"
-          - example: 2-multi-stage
+          - example: 4-complex-via-apt-get
             dockerfile: Dockerfile
             validation: "ls -la /etc/ssl/certs/ca-certificates.crt && ldconfig -p | grep libssl"
-          - example: 2-multi-stage
+          - example: 4-complex-via-apt-get
             dockerfile: Dockerfile.traditional
             validation: "ls -la /etc/ssl/certs/ca-certificates.crt && ldconfig -p | grep libssl"
           - example: 3-python-runtime
@@ -54,26 +54,16 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup build artifacts for multi-stage example
-        if: matrix.example == '2-multi-stage'
+        if: matrix.example == '4-complex-via-apt-get'
         working-directory: examples/${{ matrix.example }}
         run: |
-          # Create a Makefile.build that creates the required binary
-          # The Dockerfile runs 'make build', so we ensure this target exists
-          cat > Makefile.build << 'EOF'
-build:
-	mkdir -p bin
-	echo '#!/bin/bash' > bin/myapp
-	echo 'echo "Hello from myapp"' >> bin/myapp
-	chmod +x bin/myapp
-EOF
-          # If Makefile exists, rename it and use Makefile.build
-          # Otherwise, just use Makefile.build as Makefile
-          if [ -f Makefile ]; then
-            mv Makefile Makefile.docker
-            mv Makefile.build Makefile
-          else
-            mv Makefile.build Makefile
+          # Verify Makefile exists with build target
+          if [ ! -f Makefile ]; then
+            echo "Error: Makefile should exist in the example directory"
+            exit 1
           fi
+          # Test that the build target works
+          make build
 
       - name: Setup requirements.txt for python-runtime example
         if: matrix.example == '3-python-runtime'

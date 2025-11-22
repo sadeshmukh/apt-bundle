@@ -3,7 +3,7 @@ IMAGE_TAG ?= latest
 
 .DEFAULT_GOAL := help
 
-.PHONY: help build run shell size clean
+.PHONY: help build image run shell size clean
 
 help: ## Show this help message
 	@echo "Usage: make [target]"
@@ -15,7 +15,13 @@ help: ## Show this help message
 	@echo "  IMAGE_NAME  Docker image name (default: $(IMAGE_NAME))"
 	@echo "  IMAGE_TAG   Docker image tag (default: $(IMAGE_TAG))"
 
-build: ## Build the Docker image (multi-stage)
+build: ## Build the application binary
+	mkdir -p bin
+	echo '#!/bin/bash' > bin/myapp
+	echo 'echo "Hello from myapp"' >> bin/myapp
+	chmod +x bin/myapp
+
+image: ## Build the Docker image (multi-stage)
 	docker build -t $(IMAGE_NAME):$(IMAGE_TAG) .
 
 run: ## Run the application container
