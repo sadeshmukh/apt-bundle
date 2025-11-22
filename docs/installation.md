@@ -6,7 +6,42 @@ nav_order: 2
 
 # Installation
 
+## Quick Install (Recommended)
+
+Install the latest release using the install script:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/apt-bundle/apt-bundle/main/install.sh | sudo bash
+```
+
+This script automatically detects your system architecture and installs the appropriate `.deb` package.
+
+## Install via APT Repository
+
+For production environments or when you need version control, install from the official APT repository:
+
+```bash
+# Add the repository
+echo "deb [arch=amd64,arm64,armhf,i386] [trusted=yes] https://apt-bundle.org/repo/ stable main" | sudo tee /etc/apt/sources.list.d/apt-bundle.list
+
+# Update package lists
+sudo apt-get update
+
+# Install apt-bundle
+sudo apt-get install -y apt-bundle
+```
+
+### Benefits
+
+- ✅ Version control - Can pin to specific versions
+- ✅ Better caching - APT caches packages efficiently
+- ✅ Multi-architecture - Supports amd64, arm64, armhf, i386
+- ✅ Production-ready - Standard APT package management
+- ✅ Reproducible - Same version every time
+
 ## From Source
+
+If you want to build from source or contribute to the project:
 
 ### Prerequisites
 
