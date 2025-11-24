@@ -1,9 +1,10 @@
 IMAGE_NAME ?= via-ppa
 IMAGE_TAG ?= latest
+DOCKERFILE ?= Dockerfile
 
 .DEFAULT_GOAL := help
 
-.PHONY: help build run shell clean
+.PHONY: help build run test shell clean
 
 help: ## Show this help message
 	@echo "Usage: make [target]"
@@ -14,12 +15,16 @@ help: ## Show this help message
 	@echo "Variables:"
 	@echo "  IMAGE_NAME  Docker image name (default: $(IMAGE_NAME))"
 	@echo "  IMAGE_TAG   Docker image tag (default: $(IMAGE_TAG))"
+	@echo "  DOCKERFILE  Dockerfile to use (default: $(DOCKERFILE))"
 
 build: ## Build the Docker image
-	docker build -t $(IMAGE_NAME):$(IMAGE_TAG) .
+	docker build -f $(DOCKERFILE) -t $(IMAGE_NAME):$(IMAGE_TAG) .
 
 run: ## Run the container interactively
 	docker run -it $(IMAGE_NAME):$(IMAGE_TAG)
+
+test: ## Test the Docker image
+	docker run --rm $(IMAGE_NAME):$(IMAGE_TAG) bash -c "php8.2 --version && git --version && curl --version"
 
 shell: ## Open an interactive shell in the container
 	docker run -it $(IMAGE_NAME):$(IMAGE_TAG) /bin/bash

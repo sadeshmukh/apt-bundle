@@ -6,8 +6,8 @@ ENV DEBIAN_FRONTEND=noninteractive
 # Install prerequisites and apt-bundle from APT repository
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-        curl \
-        ca-certificates && \
+    curl \
+    ca-certificates && \
     echo "deb [arch=amd64,arm64,armhf,i386] [trusted=yes] https://apt-bundle.org/repo/ stable main" | tee /etc/apt/sources.list.d/apt-bundle.list && \
     apt-get update && \
     apt-get install -y --no-install-recommends apt-bundle && \
@@ -20,7 +20,7 @@ RUN apt-bundle install --file /app/Aptfile.build
 
 # Build your application
 COPY . /app
-RUN make build
+RUN make build-app
 
 # Runtime stage
 FROM ubuntu:22.04
@@ -30,8 +30,8 @@ ENV DEBIAN_FRONTEND=noninteractive
 # Install prerequisites and apt-bundle from APT repository
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-        curl \
-        ca-certificates && \
+    curl \
+    ca-certificates && \
     echo "deb [arch=amd64,arm64,armhf,i386] [trusted=yes] https://apt-bundle.org/repo/ stable main" | tee /etc/apt/sources.list.d/apt-bundle.list && \
     apt-get update && \
     apt-get install -y --no-install-recommends apt-bundle && \

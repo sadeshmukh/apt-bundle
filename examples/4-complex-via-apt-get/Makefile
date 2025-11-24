@@ -1,9 +1,10 @@
 IMAGE_NAME ?= complex-via-apt-get
 IMAGE_TAG ?= latest
+DOCKERFILE ?= Dockerfile
 
 .DEFAULT_GOAL := help
 
-.PHONY: help build image run shell size clean
+.PHONY: help build build-app run test shell size clean
 
 help: ## Show this help message
 	@echo "Usage: make [target]"
@@ -14,18 +15,22 @@ help: ## Show this help message
 	@echo "Variables:"
 	@echo "  IMAGE_NAME  Docker image name (default: $(IMAGE_NAME))"
 	@echo "  IMAGE_TAG   Docker image tag (default: $(IMAGE_TAG))"
+	@echo "  DOCKERFILE  Dockerfile to use (default: $(DOCKERFILE))"
 
-build: ## Build the application binary
+build-app: ## Build the application binary
 	mkdir -p bin
 	echo '#!/bin/bash' > bin/myapp
 	echo 'echo "Hello from myapp"' >> bin/myapp
 	chmod +x bin/myapp
 
-image: ## Build the Docker image (multi-stage)
-	docker build -t $(IMAGE_NAME):$(IMAGE_TAG) .
+build: ## Build the Docker image
+	docker build -f $(DOCKERFILE) -t $(IMAGE_NAME):$(IMAGE_TAG) .
 
 run: ## Run the application container
 	docker run $(IMAGE_NAME):$(IMAGE_TAG)
+
+test: ## Test the Docker image
+	docker run --rm $(IMAGE_NAME):$(IMAGE_TAG) bash -c "ls -la /etc/ssl/certs/ca-certificates.crt && ldconfig -p | grep libssl"
 
 shell: ## Open an interactive shell in the container
 	docker run -it $(IMAGE_NAME):$(IMAGE_TAG) /bin/bash
