@@ -1,9 +1,6 @@
-# PHP from PPA (Ondrej's PHP PPA)
-# PPAs automatically handle GPG keys - no need for 'key' directive!
-ppa ppa:ondrej/php
-apt php8.2
-apt php8.2-cli
-apt php8.2-fpm
+# Redis from PPA (Simpler example than PHP)
+ppa ppa:redislabs/redis
+apt redis-server
 
 # Git from PPA (newer versions than Ubuntu repos)
 ppa ppa:git-core/ppa

@@ -8,9 +8,12 @@ ENV DEBIAN_FRONTEND=noninteractive
 # Note: software-properties-common is required for add-apt-repository (used by PPAs)
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-        curl \
-        ca-certificates \
-        software-properties-common && \
+    curl \
+    ca-certificates \
+    software-properties-common \
+    tzdata && \
+    ln -fs /usr/share/zoneinfo/Etc/UTC /etc/localtime && \
+    dpkg-reconfigure -f noninteractive tzdata && \
     rm -rf /var/lib/apt/lists/* && \
     curl -fsSL https://raw.githubusercontent.com/apt-bundle/apt-bundle/main/install.sh | bash
 

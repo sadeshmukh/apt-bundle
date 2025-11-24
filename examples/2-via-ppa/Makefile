@@ -24,8 +24,8 @@ run: ## Run the container interactively
 	docker run -it $(IMAGE_NAME):$(IMAGE_TAG)
 
 test: ## Test the Docker image
-	docker run --rm $(IMAGE_NAME):$(IMAGE_TAG) bash -c "php8.2 --version && git --version && curl --version"
-	@echo "Verify that php8.2, git, and curl versions are displayed above."
+	docker run --rm $(IMAGE_NAME):$(IMAGE_TAG) bash -c "redis-server --version && git --version && curl --version"
+	@echo "Verify that redis-server, git, and curl versions are displayed above."
 
 shell: ## Open an interactive shell in the container
 	docker run -it $(IMAGE_NAME):$(IMAGE_TAG) /bin/bash
