@@ -27,6 +27,7 @@ run: ## Run the container interactively with Docker socket mounted
 
 test: ## Test the Docker image
 	docker run --rm $(IMAGE_NAME):$(IMAGE_TAG) bash -c "git --version && shellcheck --version && jq --version && docker --version"
+	@echo "Verify that git, shellcheck, jq, and docker versions are displayed above."
 
 shell: ## Open an interactive shell with Docker socket mounted
 	docker run -it -v /var/run/docker.sock:/var/run/docker.sock $(IMAGE_NAME):$(IMAGE_TAG) /bin/bash

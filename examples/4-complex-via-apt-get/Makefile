@@ -31,6 +31,7 @@ run: ## Run the application container
 
 test: ## Test the Docker image
 	docker run --rm $(IMAGE_NAME):$(IMAGE_TAG) bash -c "ls -la /etc/ssl/certs/ca-certificates.crt && ldconfig -p | grep libssl"
+	@echo "Verify that ca-certificates.crt exists and libssl is listed above."
 
 shell: ## Open an interactive shell in the container
 	docker run -it $(IMAGE_NAME):$(IMAGE_TAG) /bin/bash

@@ -25,6 +25,7 @@ run: ## Run the container interactively
 
 test: ## Test the Docker image
 	docker run --rm $(IMAGE_NAME):$(IMAGE_TAG) bash -c "git --version && vim --version && jq --version && which htop && curl --version"
+	@echo "Verify that git, vim, jq, htop, and curl versions are displayed above."
 
 shell: ## Open an interactive shell in the container
 	docker run -it $(IMAGE_NAME):$(IMAGE_TAG) /bin/bash
