@@ -8,30 +8,18 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         curl \
         ca-certificates \
-        software-properties-common && \
+        software-properties-common \
+        gnupg \
+        lsb-release && \
     rm -rf /var/lib/apt/lists/*
 
 # Add PPAs manually (requires software-properties-common)
-RUN add-apt-repository -y ppa:ondrej/php && \
-    add-apt-repository -y ppa:git-core/ppa && \
-    add-apt-repository -y ppa:chris-lea/node.js
-
-# Update package lists after adding PPAs
-RUN apt-get update
-
-# Install all packages manually
-RUN apt-get install -y --no-install-recommends \
-        php8.2 \
-        php8.2-cli \
-        php8.2-fpm \
-        php8.2-mysql \
-        php8.2-xml \
+RUN add-apt-repository -y ppa:git-core/ppa && \
+    add-apt-repository -y ppa:redislabs/redis && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
         git \
-        nodejs \
-        npm \
-        build-essential \
-        curl \
-        vim && \
+        redis-server && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 

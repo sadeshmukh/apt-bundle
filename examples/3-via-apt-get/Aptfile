@@ -1,3 +1,4 @@
 # Minimal example demonstrating APT repository installation
 apt curl
 apt git
+apt jq

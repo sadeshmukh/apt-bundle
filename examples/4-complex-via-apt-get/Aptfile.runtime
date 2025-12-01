@@ -1,5 +1,4 @@
-# Runtime dependencies only (matching build dependencies)
+# Runtime dependencies only
+apt curl
 apt ca-certificates
-apt libssl3
-apt zlib1g
 

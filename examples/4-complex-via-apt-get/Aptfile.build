@@ -1,11 +1,5 @@
-# Compiler toolchain
+# Build dependencies
 apt build-essential
-
-# Version control and source fetching
 apt git
 apt curl
-
-# Development libraries (minimal set for demonstration)
-apt libssl-dev
-apt zlib1g-dev
 
