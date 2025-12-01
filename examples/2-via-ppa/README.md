@@ -22,10 +22,8 @@ RUN curl -fsSL https://raw.githubusercontent.com/apt-bundle/apt-bundle/main/inst
 
 This example demonstrates installing packages from multiple PPAs:
 
-- **PHP 8.2** from `ppa:ondrej/php` (popular PHP PPA)
-- **Git** from `ppa:git-core/ppa` (newer Git versions)
-- **Node.js** from `ppa:chris-lea/node.js` (Node.js packages)
-- **Standard packages** from Ubuntu repos (build-essential, curl, vim)
+- **Git** from `ppa:git-core/ppa` (newer Git versions than Ubuntu repos)
+- **Redis** from `ppa:redislabs/redis` (Redis server)
 
 ## Usage
 
@@ -46,8 +44,11 @@ docker run -it via-ppa
 ### PPAs (This Example)
 ```aptfile
 # Simple - no GPG key needed!
-ppa ppa:ondrej/php
-apt php8.2
+ppa ppa:git-core/ppa
+apt git
+
+ppa ppa:redislabs/redis
+apt redis-server
 ```
 
 ### Custom Repositories (Example 3)

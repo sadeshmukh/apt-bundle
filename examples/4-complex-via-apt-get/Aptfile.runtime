@@ -1,20 +1,5 @@
-# Runtime dependencies only
+# Runtime dependencies only (matching build dependencies)
 apt ca-certificates
 apt libssl3
-apt libffi8
-apt libbz2-1.0
-apt libreadline8
-apt libsqlite3-0
-apt libncurses6
 apt zlib1g
-apt liblzma5
-
-# Runtime image processing libraries
-apt libjpeg8
-apt libpng16-16
-apt libtiff5
-
-# Runtime database libraries
-apt libpq5
-apt libmysqlclient21
 

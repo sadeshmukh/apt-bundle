@@ -7,7 +7,7 @@ A comprehensive example demonstrating advanced usage of `apt-bundle` with multi-
 This example uses the official APT repository in both build and runtime stages:
 
 ```dockerfile
-RUN echo "deb [arch=amd64,arm64,armhf,i386] [trusted=yes] https://apt-bundle.org/repo/ stable main" | tee /etc/apt/sources.list.d/apt-bundle.list && \
+RUN echo "deb [arch=amd64,arm64,armhf,i386 trusted=yes] https://apt-bundle.org/repo/ stable main" | tee /etc/apt/sources.list.d/apt-bundle.list && \
     apt-get update && \
     apt-get install -y apt-bundle
 ```
@@ -19,18 +19,16 @@ RUN echo "deb [arch=amd64,arm64,armhf,i386] [trusted=yes] https://apt-bundle.org
 - **Runtime stage**: Contains only runtime libraries needed to run the application
 - **Result**: Smaller, more secure production images
 
-### Many Dependencies
+### Minimal Dependencies (Demonstration)
 
 **Build Stage (`Aptfile.build`):**
-- Compiler toolchain: `build-essential`, `cmake`, `autoconf`, `automake`
-- Development libraries: `libssl-dev`, `libffi-dev`, `libpq-dev`, `libmysqlclient-dev`
-- Image processing dev libs: `libjpeg-dev`, `libpng-dev`, `libtiff-dev`
-- Source tools: `git`, `git-lfs`, `curl`, `wget`
+- Compiler toolchain: `build-essential`
+- Source tools: `git`, `curl`
+- Development libraries: `libssl-dev`, `zlib1g-dev`
 
 **Runtime Stage (`Aptfile.runtime`):**
-- Runtime libraries: `libssl3`, `libffi8`, `libpq5`, `libmysqlclient21`
-- Image processing runtime: `libjpeg8`, `libpng16-16`, `libtiff5`
-- System libraries: `ca-certificates`, `zlib1g`, `liblzma5`
+- Runtime libraries: `libssl3`, `zlib1g`
+- System libraries: `ca-certificates`
 
 ## Usage
 

@@ -1,24 +1,3 @@
-# Build tools
-apt build-essential
-apt cmake
-apt pkg-config
-
-# Version control
-apt git
-apt git-lfs
-
-# Testing and quality tools
-apt shellcheck
-apt jq
+# Minimal example demonstrating APT repository installation
 apt curl
-
-# Docker (for Docker-in-Docker scenarios)
-key https://download.docker.com/linux/ubuntu/gpg
-deb "[arch=amd64] https://download.docker.com/linux/ubuntu jammy stable"
-apt docker-ce-cli
-apt docker-buildx-plugin
-
-# Cloud CLI tools
-apt awscli
-apt azure-cli
-
+apt git

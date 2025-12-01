@@ -7,18 +7,14 @@ A production-ready example demonstrating how to install `apt-bundle` from the of
 This example uses the official APT repository, which provides better control and version management:
 
 ```dockerfile
-RUN echo "deb [arch=amd64,arm64,armhf,i386] [trusted=yes] https://apt-bundle.org/repo/ stable main" | tee /etc/apt/sources.list.d/apt-bundle.list && \
+RUN echo "deb [arch=amd64,arm64,armhf,i386 trusted=yes] https://apt-bundle.org/repo/ stable main" | tee /etc/apt/sources.list.d/apt-bundle.list && \
     apt-get update && \
     apt-get install -y apt-bundle
 ```
 
 ## What's Included
 
-- Build tools: `build-essential`, `cmake`, `pkg-config`
-- Version control: `git`, `git-lfs`
-- Testing tools: `shellcheck`, `jq`, `curl`
-- Docker CLI: `docker-ce-cli`, `docker-buildx-plugin` (for Docker-in-Docker)
-- Cloud CLIs: `awscli`, `azure-cli`
+- Utilities: `curl`, `git`
 
 ## Usage
 
@@ -29,8 +25,8 @@ make build
 # Run interactively
 make run
 
-# Run with Docker socket (for Docker-in-Docker)
-docker run -v /var/run/docker.sock:/var/run/docker.sock via-apt-get
+# Test the installed packages
+make test
 ```
 
 ## When to Use This Method

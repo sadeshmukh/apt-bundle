@@ -1,13 +1,6 @@
-# Redis from PPA (Simpler example than PHP)
-ppa ppa:redislabs/redis
-apt redis-server
-
-# Git from PPA (newer versions than Ubuntu repos)
+# Demonstrate PPA usage - simple syntax, no GPG keys needed
 ppa ppa:git-core/ppa
 apt git
 
-# Development tools from standard repos
-apt build-essential
-apt curl
-apt vim
-
+ppa ppa:redislabs/redis
+apt redis-server

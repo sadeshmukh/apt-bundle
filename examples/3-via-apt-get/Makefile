@@ -17,23 +17,21 @@ help: ## Show this help message
 	@echo "  IMAGE_TAG   Docker image tag (default: $(IMAGE_TAG))"
 	@echo "  DOCKERFILE  Dockerfile to use (default: $(DOCKERFILE))"
 	@echo ""
-	@echo "Note: All run targets mount the Docker socket for Docker-in-Docker support."
-
 build: ## Build the CI/CD Docker image
 	docker build -f $(DOCKERFILE) -t $(IMAGE_NAME):$(IMAGE_TAG) .
 
-run: ## Run the container interactively with Docker socket mounted
-	docker run -it -v /var/run/docker.sock:/var/run/docker.sock $(IMAGE_NAME):$(IMAGE_TAG)
+run: ## Run the container interactively
+	docker run -it $(IMAGE_NAME):$(IMAGE_TAG)
 
 test: ## Test the Docker image
-	docker run --rm $(IMAGE_NAME):$(IMAGE_TAG) bash -c "git --version && shellcheck --version && jq --version && docker --version"
-	@echo "Verify that git, shellcheck, jq, and docker versions are displayed above."
+	docker run --rm $(IMAGE_NAME):$(IMAGE_TAG) bash -c "git --version && echo '---' && curl --version"
+	@echo "Verify that git and curl versions are displayed above (separated by ---)."
 
-shell: ## Open an interactive shell with Docker socket mounted
-	docker run -it -v /var/run/docker.sock:/var/run/docker.sock $(IMAGE_NAME):$(IMAGE_TAG) /bin/bash
+shell: ## Open an interactive shell in the container
+	docker run -it $(IMAGE_NAME):$(IMAGE_TAG) /bin/bash
 
 ci: ## Run CI mode (mounts current directory as /workspace)
-	docker run -v /var/run/docker.sock:/var/run/docker.sock -v $$(pwd):/workspace $(IMAGE_NAME):$(IMAGE_TAG)
+	docker run -v $$(pwd):/workspace $(IMAGE_NAME):$(IMAGE_TAG)
 
 clean: ## Remove the Docker image
 	docker rmi $(IMAGE_NAME):$(IMAGE_TAG) || true

@@ -12,11 +12,7 @@ RUN curl -fsSL https://raw.githubusercontent.com/apt-bundle/apt-bundle/main/inst
 
 ## What's Included
 
-- Build tools: `build-essential`
-- Version control: `git`
-- Text editors: `vim`
-- Utilities: `curl`, `wget`, `jq`, `htop`
-- Network tools: `net-tools`
+- Utilities: `curl`, `git`
 
 ## Usage
 
