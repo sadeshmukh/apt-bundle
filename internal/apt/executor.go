@@ -40,3 +40,13 @@ func wrapCommandError(err error, operation, target string) error {
 	}
 	return nil
 }
+
+// SetExecutor sets the command executor (for testing only)
+func SetExecutor(e CommandExecutor) {
+	defaultExecutor = e
+}
+
+// ResetExecutor resets to the default real executor (for testing only)
+func ResetExecutor() {
+	defaultExecutor = &realExecutor{}
+}

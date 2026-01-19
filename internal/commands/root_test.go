@@ -118,3 +118,56 @@ func TestGlobalVariables(t *testing.T) {
 		}
 	})
 }
+
+// Mock-based tests for checkRoot
+
+func TestCheckRootWithMock(t *testing.T) {
+	defer ResetGetEuid()
+
+	t.Run("as root (euid 0)", func(t *testing.T) {
+		SetGetEuid(func() int { return 0 })
+
+		err := checkRoot()
+		if err != nil {
+			t.Errorf("Expected no error when running as root, got %v", err)
+		}
+	})
+
+	t.Run("not as root (euid 1000)", func(t *testing.T) {
+		SetGetEuid(func() int { return 1000 })
+
+		err := checkRoot()
+		if err == nil {
+			t.Error("Expected error when not running as root")
+		}
+		if err.Error() != "this command requires root privileges. Please run with sudo" {
+			t.Errorf("Unexpected error message: %s", err.Error())
+		}
+	})
+}
+
+func TestSetGetEuid(t *testing.T) {
+	defer ResetGetEuid()
+
+	SetGetEuid(func() int { return 42 })
+
+	result := getEuid()
+	if result != 42 {
+		t.Errorf("Expected 42, got %d", result)
+	}
+}
+
+func TestResetGetEuid(t *testing.T) {
+	// Set a custom getEuid
+	SetGetEuid(func() int { return 42 })
+
+	// Reset it
+	ResetGetEuid()
+
+	// After reset, getEuid should return the real euid
+	// We can't easily verify the exact value, but we can verify it's callable
+	result := getEuid()
+	if result != os.Geteuid() {
+		t.Errorf("Expected real euid %d, got %d", os.Geteuid(), result)
+	}
+}

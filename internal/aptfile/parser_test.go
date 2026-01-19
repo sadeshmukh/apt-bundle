@@ -354,3 +354,25 @@ func TestEntry(t *testing.T) {
 		t.Errorf("Entry.Original = %v, want 'apt curl'", entry.Original)
 	}
 }
+
+func TestParseScannerError(t *testing.T) {
+	// Test that Parse handles scanner errors (e.g., line too long)
+	// The default bufio.Scanner buffer is 64KB, so we create a line longer than that
+	t.Run("line too long triggers scanner error", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		tmpFile := filepath.Join(tmpDir, "Aptfile")
+
+		// Create a very long line (> 64KB) to trigger bufio.ErrTooLong
+		longLine := "apt " + string(make([]byte, 70000)) // Fill with null bytes but starts with valid directive
+
+		// Write the file
+		if err := os.WriteFile(tmpFile, []byte(longLine), 0644); err != nil {
+			t.Fatalf("Failed to create temp file: %v", err)
+		}
+
+		_, err := Parse(tmpFile)
+		if err == nil {
+			t.Error("Expected error for line too long")
+		}
+	})
+}

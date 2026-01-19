@@ -29,9 +29,22 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&aptfilePath, "file", "f", "Aptfile", "Path to Aptfile")
 }
 
+// getEuid is the function used to get effective UID (overridable for testing)
+var getEuid = os.Geteuid
+
 func checkRoot() error {
-	if os.Geteuid() != 0 {
+	if getEuid() != 0 {
 		return fmt.Errorf("this command requires root privileges. Please run with sudo")
 	}
 	return nil
+}
+
+// SetGetEuid sets the getEuid function (for testing only)
+func SetGetEuid(f func() int) {
+	getEuid = f
+}
+
+// ResetGetEuid resets getEuid to the default (for testing only)
+func ResetGetEuid() {
+	getEuid = os.Geteuid
 }

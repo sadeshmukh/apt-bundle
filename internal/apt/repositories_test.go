@@ -1,6 +1,7 @@
 package apt
 
 import (
+	"errors"
 	"os/exec"
 	"testing"
 )
@@ -103,4 +104,122 @@ func BenchmarkAddDebRepository(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		_ = AddDebRepository("deb http://example.com/ubuntu jammy main")
 	}
+}
+
+// Mock-based tests for reliable unit testing without system dependencies
+
+func TestAddPPAWithMock(t *testing.T) {
+	defer ResetExecutor()
+	defer ResetLookPath()
+
+	t.Run("add-apt-repository not found", func(t *testing.T) {
+		SetLookPath(func(file string) (string, error) {
+			return "", errors.New("executable file not found in $PATH")
+		})
+
+		err := AddPPA("ppa:test/ppa")
+		if err == nil {
+			t.Error("Expected error, got nil")
+		}
+		if err.Error() != "add-apt-repository not found. Please install software-properties-common" {
+			t.Errorf("Unexpected error message: %s", err.Error())
+		}
+	})
+
+	t.Run("successful PPA addition", func(t *testing.T) {
+		SetLookPath(func(file string) (string, error) {
+			return "/usr/bin/add-apt-repository", nil
+		})
+
+		mock := newMockExecutor()
+		mock.runFunc = func(name string, args ...string) error {
+			return nil
+		}
+		SetExecutor(mock)
+
+		err := AddPPA("ppa:deadsnakes/ppa")
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+
+		// Verify correct command was called
+		if len(mock.runCalls) != 1 {
+			t.Errorf("Expected 1 run call, got %d", len(mock.runCalls))
+		}
+		expectedArgs := []string{"add-apt-repository", "-y", "ppa:deadsnakes/ppa"}
+		for i, arg := range expectedArgs {
+			if mock.runCalls[0][i] != arg {
+				t.Errorf("Arg %d: expected %s, got %s", i, arg, mock.runCalls[0][i])
+			}
+		}
+	})
+
+	t.Run("PPA addition command failure", func(t *testing.T) {
+		SetLookPath(func(file string) (string, error) {
+			return "/usr/bin/add-apt-repository", nil
+		})
+
+		mock := newMockExecutor()
+		mock.runFunc = func(name string, args ...string) error {
+			return errors.New("E: The repository 'ppa:invalid/ppa' does not have a Release file")
+		}
+		SetExecutor(mock)
+
+		err := AddPPA("ppa:invalid/ppa")
+		if err == nil {
+			t.Error("Expected error, got nil")
+		}
+		expectedErr := "failed to add PPA ppa:invalid/ppa: E: The repository 'ppa:invalid/ppa' does not have a Release file"
+		if err.Error() != expectedErr {
+			t.Errorf("Unexpected error message: %s", err.Error())
+		}
+	})
+
+	t.Run("lookPath is called with correct argument", func(t *testing.T) {
+		var calledWith string
+		SetLookPath(func(file string) (string, error) {
+			calledWith = file
+			return "/usr/bin/add-apt-repository", nil
+		})
+
+		mock := newMockExecutor()
+		SetExecutor(mock)
+
+		_ = AddPPA("ppa:test/ppa")
+
+		if calledWith != "add-apt-repository" {
+			t.Errorf("Expected lookPath to be called with 'add-apt-repository', got '%s'", calledWith)
+		}
+	})
+}
+
+func TestSetLookPath(t *testing.T) {
+	defer ResetLookPath()
+
+	customLookPath := func(file string) (string, error) {
+		return "/custom/path", nil
+	}
+	SetLookPath(customLookPath)
+
+	path, err := lookPath("test")
+	if err != nil {
+		t.Errorf("Expected no error, got %v", err)
+	}
+	if path != "/custom/path" {
+		t.Errorf("Expected '/custom/path', got '%s'", path)
+	}
+}
+
+func TestResetLookPath(t *testing.T) {
+	// Set a custom lookPath
+	SetLookPath(func(file string) (string, error) {
+		return "/custom/path", nil
+	})
+
+	// Reset it
+	ResetLookPath()
+
+	// After reset, lookPath should behave like exec.LookPath
+	// We can't easily verify this without side effects, but we can verify it doesn't panic
+	_, _ = lookPath("ls")
 }

@@ -5,11 +5,14 @@ import (
 	"os/exec"
 )
 
+// lookPath is the function used to look up command paths (overridable for testing)
+var lookPath = exec.LookPath
+
 // AddPPA adds a PPA repository using add-apt-repository
 func AddPPA(ppa string) error {
 	fmt.Printf("Adding PPA: %s\n", ppa)
 
-	if _, err := exec.LookPath("add-apt-repository"); err != nil {
+	if _, err := lookPath("add-apt-repository"); err != nil {
 		return fmt.Errorf("add-apt-repository not found. Please install software-properties-common")
 	}
 
@@ -19,6 +22,16 @@ func AddPPA(ppa string) error {
 
 	fmt.Printf("✓ PPA %s added successfully\n", ppa)
 	return nil
+}
+
+// SetLookPath sets the lookPath function (for testing only)
+func SetLookPath(f func(string) (string, error)) {
+	lookPath = f
+}
+
+// ResetLookPath resets lookPath to the default (for testing only)
+func ResetLookPath() {
+	lookPath = exec.LookPath
 }
 
 // AddDebRepository adds a deb repository line to /etc/apt/sources.list.d/
