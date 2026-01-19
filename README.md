@@ -170,7 +170,12 @@ sudo apt-bundle
 
 ### Dockerfile
 
-Use `apt-bundle` in your Dockerfiles to manage system dependencies declaratively. See the [examples directory](examples/) for complete working examples including multi-stage builds, Python runtimes, CI/CD setups, and more.
+Use `apt-bundle` in your Dockerfiles to manage system dependencies declaratively. See the [examples directory](examples/) for complete working examples:
+
+- **[1-via-install-sh](examples/1-via-install-sh/)** - Install apt-bundle using the install script
+- **[2-via-ppa](examples/2-via-ppa/)** - Install apt-bundle from the PPA
+- **[3-via-apt-get](examples/3-via-apt-get/)** - Install apt-bundle via apt-get from the APT repository
+- **[4-complex-via-apt-get](examples/4-complex-via-apt-get/)** - Multi-stage build with separate build/runtime Aptfiles
 
 ### System Sync
 
@@ -191,11 +196,12 @@ apt-bundle/
 ├── cmd/
 │   └── apt-bundle/       # Main entry point
 ├── internal/
+│   ├── apt/              # APT interactions (packages, repos, keys)
 │   ├── aptfile/          # Aptfile parsing
-│   ├── commands/         # CLI commands (install, dump, check)
-│   ├── apt/              # APT interactions
-│   └── config/           # Configuration
-├── docs/                 # Requirements and specifications
+│   └── commands/         # CLI commands (install, dump, check)
+├── examples/             # Docker examples by installation method
+├── docs/                 # Documentation site and APT repository
+├── specs/                # Requirements and technical specifications
 ├── Makefile              # Build automation
 └── go.mod                # Go module definition
 ```
@@ -258,16 +264,16 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
-[Add your license here]
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
 
 ## Roadmap
 
-- [ ] Core functionality (install, dump, check)
-- [ ] Package version handling
-- [ ] PPA management
-- [ ] Custom repository management
-- [ ] GPG key management
-- [ ] Comprehensive test suite
-- [ ] CI/CD pipeline
-- [ ] Release automation
+- [x] Core functionality (install, dump, check)
+- [x] Package version handling
+- [x] PPA management
+- [x] Custom repository management
+- [x] GPG key management
+- [x] CI/CD pipeline
+- [x] Release automation
+- [ ] Expand test coverage
 
