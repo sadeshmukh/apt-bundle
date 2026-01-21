@@ -1,6 +1,6 @@
 # apt-bundle
 
-A declarative package manager for apt, inspired by Homebrew's `brew bundle`.
+A declarative, Brewfile-like wrapper for `apt`, inspired by `brew bundle` — not a full config management system.
 
 **[📚 Full Documentation](https://apt-bundle.github.io/apt-bundle/)** | [Installation](#installation) | [Usage](#usage)
 
