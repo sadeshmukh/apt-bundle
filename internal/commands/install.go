@@ -51,22 +51,53 @@ func runInstall(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to load state: %w", err)
 	}
 
-	// TODO: Implement the actual installation logic
-	// 1. Process all 'key' directives
-	// 2. Process all 'ppa' directives
-	// 3. Process all 'deb' directives
+	// Process entries in order, linking keys to subsequent deb directives
+	var pendingKeyPath string
+	var reposAdded bool
 
-	// 4. Run apt-get update (unless --no-update is specified)
-	if !noUpdate {
-		if err := apt.Update(); err != nil {
-			return fmt.Errorf("failed to update package lists: %w", err)
+	for _, entry := range entries {
+		switch entry.Type {
+		case aptfile.EntryTypeKey:
+			// Add the GPG key and store the path for the next deb directive
+			keyPath, err := apt.AddGPGKey(entry.Value)
+			if err != nil {
+				return fmt.Errorf("failed to add GPG key: %w", err)
+			}
+			pendingKeyPath = keyPath
+			state.AddKey(keyPath)
+
+		case aptfile.EntryTypePPA:
+			// Add PPA repository
+			if err := apt.AddPPA(entry.Value); err != nil {
+				return fmt.Errorf("failed to add PPA: %w", err)
+			}
+			reposAdded = true
+
+		case aptfile.EntryTypeDeb:
+			// Add deb repository with the pending key (if any)
+			sourcePath, err := apt.AddDebRepository(entry.Value, pendingKeyPath)
+			if err != nil {
+				return fmt.Errorf("failed to add repository: %w", err)
+			}
+			state.AddRepository(sourcePath)
+			pendingKeyPath = "" // Clear the pending key after use
+			reposAdded = true
 		}
 	}
 
-	// 5. Process all 'apt' directives to install packages
+	// Run apt-get update if repositories were added or if not skipped
+	if reposAdded || !noUpdate {
+		if !noUpdate {
+			if err := apt.Update(); err != nil {
+				return fmt.Errorf("failed to update package lists: %w", err)
+			}
+		}
+	}
+
+	// Process all 'apt' directives to install packages
 	packagesToInstall := []string{}
 	for _, entry := range entries {
-		if entry.Type == "apt" {
+		if entry.Type == aptfile.EntryTypeApt {
 			packagesToInstall = append(packagesToInstall, entry.Value)
 		}
 	}
