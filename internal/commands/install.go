@@ -45,18 +45,24 @@ func runInstall(cmd *cobra.Command, args []string) error {
 
 	fmt.Printf("Found %d entries in Aptfile\n", len(entries))
 
+	// Load the state to track managed packages
+	state, err := apt.LoadState()
+	if err != nil {
+		return fmt.Errorf("failed to load state: %w", err)
+	}
+
 	// TODO: Implement the actual installation logic
 	// 1. Process all 'key' directives
 	// 2. Process all 'ppa' directives
 	// 3. Process all 'deb' directives
-	
+
 	// 4. Run apt-get update (unless --no-update is specified)
 	if !noUpdate {
 		if err := apt.Update(); err != nil {
 			return fmt.Errorf("failed to update package lists: %w", err)
 		}
 	}
-	
+
 	// 5. Process all 'apt' directives to install packages
 	packagesToInstall := []string{}
 	for _, entry := range entries {
@@ -75,6 +81,9 @@ func runInstall(cmd *cobra.Command, args []string) error {
 			}
 			if installed {
 				fmt.Printf("✓ Package %s is already installed\n", pkg)
+				// Track the package in state even if already installed
+				// (user may have installed it manually before using apt-bundle)
+				state.AddPackage(pkg)
 				continue
 			}
 
@@ -82,10 +91,18 @@ func runInstall(cmd *cobra.Command, args []string) error {
 			if err := apt.InstallPackage(pkg); err != nil {
 				return fmt.Errorf("failed to install package %s: %w", pkg, err)
 			}
+
+			// Track successfully installed package in state
+			state.AddPackage(pkg)
 		}
 		fmt.Println("✓ All packages installed successfully")
 	} else {
 		fmt.Println("No packages to install")
+	}
+
+	// Save the updated state
+	if err := state.Save(); err != nil {
+		return fmt.Errorf("failed to save state: %w", err)
 	}
 
 	return nil

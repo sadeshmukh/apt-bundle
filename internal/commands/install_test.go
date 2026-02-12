@@ -219,12 +219,16 @@ func TestRunInstallWithMock(t *testing.T) {
 		apt.SetExecutor(mock)
 		defer apt.ResetExecutor()
 
+		// Setup state path
+		tmpDir := t.TempDir()
+		apt.SetStatePath(filepath.Join(tmpDir, "state.json"))
+		defer apt.ResetStatePath()
+
 		// Save and restore noUpdate flag
 		originalNoUpdate := noUpdate
 		defer func() { noUpdate = originalNoUpdate }()
 		noUpdate = true // Skip apt-get update
 
-		tmpDir := t.TempDir()
 		tmpFile := filepath.Join(tmpDir, "Aptfile")
 		content := "# Just a comment\n"
 
@@ -257,12 +261,16 @@ func TestRunInstallWithMock(t *testing.T) {
 		apt.SetExecutor(mock)
 		defer apt.ResetExecutor()
 
+		// Setup state path
+		tmpDir := t.TempDir()
+		apt.SetStatePath(filepath.Join(tmpDir, "state.json"))
+		defer apt.ResetStatePath()
+
 		// Enable update
 		originalNoUpdate := noUpdate
 		defer func() { noUpdate = originalNoUpdate }()
 		noUpdate = false
 
-		tmpDir := t.TempDir()
 		tmpFile := filepath.Join(tmpDir, "Aptfile")
 		content := "apt curl\napt git\n"
 
@@ -306,12 +314,16 @@ func TestRunInstallWithMock(t *testing.T) {
 		apt.SetExecutor(mock)
 		defer apt.ResetExecutor()
 
+		// Setup state path
+		tmpDir := t.TempDir()
+		apt.SetStatePath(filepath.Join(tmpDir, "state.json"))
+		defer apt.ResetStatePath()
+
 		// Disable update
 		originalNoUpdate := noUpdate
 		defer func() { noUpdate = originalNoUpdate }()
 		noUpdate = true
 
-		tmpDir := t.TempDir()
 		tmpFile := filepath.Join(tmpDir, "Aptfile")
 		content := "apt curl\n"
 
@@ -351,11 +363,15 @@ func TestRunInstallWithMock(t *testing.T) {
 		apt.SetExecutor(mock)
 		defer apt.ResetExecutor()
 
+		// Setup state path
+		tmpDir := t.TempDir()
+		apt.SetStatePath(filepath.Join(tmpDir, "state.json"))
+		defer apt.ResetStatePath()
+
 		originalNoUpdate := noUpdate
 		defer func() { noUpdate = originalNoUpdate }()
 		noUpdate = true
 
-		tmpDir := t.TempDir()
 		tmpFile := filepath.Join(tmpDir, "Aptfile")
 		content := "apt curl\n"
 
@@ -394,11 +410,15 @@ func TestRunInstallWithMock(t *testing.T) {
 		apt.SetExecutor(mock)
 		defer apt.ResetExecutor()
 
+		// Setup state path
+		tmpDir := t.TempDir()
+		apt.SetStatePath(filepath.Join(tmpDir, "state.json"))
+		defer apt.ResetStatePath()
+
 		originalNoUpdate := noUpdate
 		defer func() { noUpdate = originalNoUpdate }()
 		noUpdate = false
 
-		tmpDir := t.TempDir()
 		tmpFile := filepath.Join(tmpDir, "Aptfile")
 		content := "apt curl\n"
 
@@ -433,11 +453,15 @@ func TestRunInstallWithMock(t *testing.T) {
 		apt.SetExecutor(mock)
 		defer apt.ResetExecutor()
 
+		// Setup state path
+		tmpDir := t.TempDir()
+		apt.SetStatePath(filepath.Join(tmpDir, "state.json"))
+		defer apt.ResetStatePath()
+
 		originalNoUpdate := noUpdate
 		defer func() { noUpdate = originalNoUpdate }()
 		noUpdate = true
 
-		tmpDir := t.TempDir()
 		tmpFile := filepath.Join(tmpDir, "Aptfile")
 		content := "apt nonexistent-package\n"
 
@@ -472,11 +496,15 @@ func TestRunInstallWithMock(t *testing.T) {
 		apt.SetExecutor(mock)
 		defer apt.ResetExecutor()
 
+		// Setup state path
+		tmpDir := t.TempDir()
+		apt.SetStatePath(filepath.Join(tmpDir, "state.json"))
+		defer apt.ResetStatePath()
+
 		originalNoUpdate := noUpdate
 		defer func() { noUpdate = originalNoUpdate }()
 		noUpdate = true
 
-		tmpDir := t.TempDir()
 		tmpFile := filepath.Join(tmpDir, "Aptfile")
 		content := "apt curl\n"
 
