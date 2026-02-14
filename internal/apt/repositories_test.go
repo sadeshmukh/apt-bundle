@@ -11,6 +11,55 @@ import (
 	"github.com/apt-bundle/apt-bundle/internal/testutil"
 )
 
+func TestIsUbuntu(t *testing.T) {
+	dir := t.TempDir()
+	defer ResetOsReleasePath()
+
+	t.Run("ID=ubuntu returns true", func(t *testing.T) {
+		f := filepath.Join(dir, "os-release-ubuntu")
+		if err := os.WriteFile(f, []byte("ID=ubuntu\nVERSION_ID=22.04\n"), 0644); err != nil {
+			t.Fatal(err)
+		}
+		SetOsReleasePath(f)
+		defer ResetOsReleasePath()
+		if !isUbuntu() {
+			t.Error("expected isUbuntu() true for ID=ubuntu")
+		}
+	})
+
+	t.Run("ID_LIKE=ubuntu returns true", func(t *testing.T) {
+		f := filepath.Join(dir, "os-release-mint")
+		if err := os.WriteFile(f, []byte("ID=linuxmint\nID_LIKE=ubuntu\n"), 0644); err != nil {
+			t.Fatal(err)
+		}
+		SetOsReleasePath(f)
+		defer ResetOsReleasePath()
+		if !isUbuntu() {
+			t.Error("expected isUbuntu() true for ID_LIKE=ubuntu")
+		}
+	})
+
+	t.Run("non-Ubuntu returns false", func(t *testing.T) {
+		f := filepath.Join(dir, "os-release-debian")
+		if err := os.WriteFile(f, []byte("ID=debian\nVERSION_ID=12\n"), 0644); err != nil {
+			t.Fatal(err)
+		}
+		SetOsReleasePath(f)
+		defer ResetOsReleasePath()
+		if isUbuntu() {
+			t.Error("expected isUbuntu() false for ID=debian")
+		}
+	})
+
+	t.Run("missing file returns false", func(t *testing.T) {
+		SetOsReleasePath(filepath.Join(dir, "nonexistent"))
+		defer ResetOsReleasePath()
+		if isUbuntu() {
+			t.Error("expected isUbuntu() false when os-release missing")
+		}
+	})
+}
+
 func TestAddPPA(t *testing.T) {
 	t.Run("add-apt-repository not available", func(t *testing.T) {
 		err := AddPPA("ppa:deadsnakes/ppa")
