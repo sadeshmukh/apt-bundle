@@ -20,8 +20,31 @@ const (
 // lookPath is the function used to look up command paths (overridable for testing)
 var lookPath = exec.LookPath
 
+// osReleasePath is the path to os-release (overridable for testing)
+var osReleasePath = "/etc/os-release"
+
+// SetOsReleasePath sets osReleasePath (for testing only)
+func SetOsReleasePath(path string) { osReleasePath = path }
+
+// ResetOsReleasePath resets osReleasePath to default (for testing only)
+func ResetOsReleasePath() { osReleasePath = "/etc/os-release" }
+
+// isUbuntu checks if the current system is Ubuntu by reading /etc/os-release
+func isUbuntu() bool {
+	data, err := os.ReadFile(osReleasePath)
+	if err != nil {
+		return false
+	}
+	content := string(data)
+	return strings.Contains(content, "ID=ubuntu") ||
+		strings.Contains(content, "ID_LIKE=ubuntu")
+}
+
 // AddPPA adds a PPA repository using add-apt-repository
 func AddPPA(ppa string) error {
+	if !isUbuntu() {
+		fmt.Println("⚠️  Warning: PPAs are designed for Ubuntu. Using on other distros may cause issues.")
+	}
 	fmt.Printf("Adding PPA: %s\n", ppa)
 
 	if _, err := lookPath("add-apt-repository"); err != nil {
