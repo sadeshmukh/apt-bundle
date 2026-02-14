@@ -16,6 +16,20 @@ A declarative, Brewfile-like wrapper for `apt`, inspired by `brew bundle` — no
 - 📝 **Version Pinning**: Install specific package versions
 - 🚀 **Simple CLI**: Easy-to-use command-line interface
 
+## Why apt-bundle?
+
+**Why not just bash scripts?** Idempotency is hard to get right; repository and key management is error-prone; and scripts become unmaintainable as they grow. apt-bundle gives you a single, declarative file and predictable behavior every time.
+
+**Comparison to alternatives:**
+
+| vs | apt-bundle advantage |
+|----|------------------------|
+| `dpkg --get-selections` | Human-readable Aptfile format, handles repos and keys, supports partial adoption |
+| Ansible / Chef | Zero learning curve, no YAML or DSL—just packages and directives |
+| Nix | Works with your existing apt ecosystem; no paradigm shift |
+
+**Key benefits:** The Aptfile is declarative and shareable (commit it to git). Use `apt-bundle dump` to generate an Aptfile from your current system, `apt-bundle check` to validate without installing, and `apt-bundle cleanup` to remove packages no longer in the Aptfile (when using state-tracked installs).
+
 ## Installation
 
 ### Quick Install (Recommended)
