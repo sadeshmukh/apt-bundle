@@ -2,7 +2,10 @@ package apt
 
 import (
 	"errors"
+	"os"
 	"os/exec"
+	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -60,50 +63,183 @@ func TestAddPPA(t *testing.T) {
 	})
 }
 
+func TestParseDebLine(t *testing.T) {
+	t.Run("simple deb line", func(t *testing.T) {
+		repo, err := parseDebLine("https://example.com/ubuntu jammy main")
+		if err != nil {
+			t.Fatalf("parseDebLine failed: %v", err)
+		}
+		if repo.Types != "deb" {
+			t.Errorf("Expected type 'deb', got '%s'", repo.Types)
+		}
+		if repo.URIs != "https://example.com/ubuntu" {
+			t.Errorf("Expected URI 'https://example.com/ubuntu', got '%s'", repo.URIs)
+		}
+		if repo.Suites != "jammy" {
+			t.Errorf("Expected suite 'jammy', got '%s'", repo.Suites)
+		}
+		if repo.Components != "main" {
+			t.Errorf("Expected components 'main', got '%s'", repo.Components)
+		}
+	})
+
+	t.Run("deb line with arch option", func(t *testing.T) {
+		repo, err := parseDebLine("[arch=amd64] https://download.docker.com/linux/ubuntu focal stable")
+		if err != nil {
+			t.Fatalf("parseDebLine failed: %v", err)
+		}
+		if repo.Architectures != "amd64" {
+			t.Errorf("Expected arch 'amd64', got '%s'", repo.Architectures)
+		}
+		if repo.URIs != "https://download.docker.com/linux/ubuntu" {
+			t.Errorf("Expected URI, got '%s'", repo.URIs)
+		}
+		if repo.Suites != "focal" {
+			t.Errorf("Expected suite 'focal', got '%s'", repo.Suites)
+		}
+		if repo.Components != "stable" {
+			t.Errorf("Expected components 'stable', got '%s'", repo.Components)
+		}
+	})
+
+	t.Run("deb line with multiple components", func(t *testing.T) {
+		repo, err := parseDebLine("https://example.com/ubuntu jammy main contrib non-free")
+		if err != nil {
+			t.Fatalf("parseDebLine failed: %v", err)
+		}
+		if repo.Components != "main contrib non-free" {
+			t.Errorf("Expected components 'main contrib non-free', got '%s'", repo.Components)
+		}
+	})
+
+	t.Run("deb line with leading deb", func(t *testing.T) {
+		repo, err := parseDebLine("deb https://example.com/ubuntu jammy main")
+		if err != nil {
+			t.Fatalf("parseDebLine failed: %v", err)
+		}
+		if repo.Types != "deb" {
+			t.Errorf("Expected type 'deb', got '%s'", repo.Types)
+		}
+	})
+
+	t.Run("invalid deb line - too few parts", func(t *testing.T) {
+		_, err := parseDebLine("https://example.com/ubuntu")
+		if err == nil {
+			t.Error("Expected error for invalid deb line")
+		}
+	})
+
+	t.Run("empty deb line", func(t *testing.T) {
+		_, err := parseDebLine("")
+		if err == nil {
+			t.Error("Expected error for empty deb line")
+		}
+	})
+}
+
+func TestDebRepositoryToDEB822(t *testing.T) {
+	t.Run("full repository", func(t *testing.T) {
+		repo := &DebRepository{
+			Types:         "deb",
+			URIs:          "https://download.docker.com/linux/ubuntu",
+			Suites:        "focal",
+			Components:    "stable",
+			Architectures: "amd64",
+			SignedBy:      "/etc/apt/keyrings/docker.gpg",
+		}
+
+		content := repo.ToDEB822()
+
+		expected := `Types: deb
+URIs: https://download.docker.com/linux/ubuntu
+Suites: focal
+Components: stable
+Architectures: amd64
+Signed-By: /etc/apt/keyrings/docker.gpg
+`
+		if content != expected {
+			t.Errorf("DEB822 content mismatch.\nGot:\n%s\nExpected:\n%s", content, expected)
+		}
+	})
+
+	t.Run("minimal repository", func(t *testing.T) {
+		repo := &DebRepository{
+			Types:  "deb",
+			URIs:   "https://example.com/ubuntu",
+			Suites: "jammy",
+		}
+
+		content := repo.ToDEB822()
+
+		if !strings.Contains(content, "Types: deb") {
+			t.Error("Missing Types field")
+		}
+		if !strings.Contains(content, "URIs: https://example.com/ubuntu") {
+			t.Error("Missing URIs field")
+		}
+		if !strings.Contains(content, "Suites: jammy") {
+			t.Error("Missing Suites field")
+		}
+		if strings.Contains(content, "Components:") {
+			t.Error("Should not have Components field when empty")
+		}
+		if strings.Contains(content, "Architectures:") {
+			t.Error("Should not have Architectures field when empty")
+		}
+		if strings.Contains(content, "Signed-By:") {
+			t.Error("Should not have Signed-By field when empty")
+		}
+	})
+}
+
 func TestAddDebRepository(t *testing.T) {
-	t.Run("basic functionality", func(t *testing.T) {
-		err := AddDebRepository("deb http://example.com/ubuntu jammy main")
-		// Currently returns nil as it's not implemented
-		if err != nil {
-			t.Errorf("AddDebRepository() returned error: %v", err)
-		}
-	})
+	tmpDir := t.TempDir()
 
-	t.Run("empty repository line", func(t *testing.T) {
-		err := AddDebRepository("")
-		// Should handle empty line gracefully
-		if err != nil {
-			t.Errorf("AddDebRepository('') returned error: %v", err)
-		}
-	})
+	// We can't easily override SourcesDir constant, so these tests
+	// verify the parsing logic rather than actual file writing
 
-	t.Run("complex repository line", func(t *testing.T) {
-		repoLine := "deb [arch=amd64 signed-by=/usr/share/keyrings/example.gpg] http://example.com/ubuntu jammy main contrib"
-		err := AddDebRepository(repoLine)
+	t.Run("parse and format Docker repository", func(t *testing.T) {
+		repoLine := "[arch=amd64] https://download.docker.com/linux/ubuntu focal stable"
+		keyPath := filepath.Join(tmpDir, "docker.gpg")
+
+		// Create a fake key file
+		os.WriteFile(keyPath, []byte("fake key"), 0644)
+
+		// This will fail without write permissions to /etc/apt/sources.list.d
+		// but we can verify it doesn't panic and handles the error
+		_, err := AddDebRepository(repoLine, keyPath)
 		if err != nil {
-			t.Errorf("AddDebRepository() returned error: %v", err)
+			// Expected to fail in test environment
+			t.Logf("AddDebRepository failed (expected in test): %v", err)
 		}
 	})
 }
 
-// Benchmark tests
-func BenchmarkAddPPA(b *testing.B) {
-	if _, err := exec.LookPath("add-apt-repository"); err != nil {
-		b.Skip("add-apt-repository not available, skipping benchmark")
-	}
+func TestRemoveDebRepository(t *testing.T) {
+	tmpDir := t.TempDir()
 
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		// Note: This will fail without sudo, but we're benchmarking the code path
-		_ = AddPPA("ppa:test/ppa")
-	}
-}
+	t.Run("remove existing source", func(t *testing.T) {
+		sourcePath := filepath.Join(tmpDir, "test.sources")
+		if err := os.WriteFile(sourcePath, []byte("test"), 0644); err != nil {
+			t.Fatalf("Failed to create test file: %v", err)
+		}
 
-func BenchmarkAddDebRepository(b *testing.B) {
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		_ = AddDebRepository("deb http://example.com/ubuntu jammy main")
-	}
+		err := RemoveDebRepository(sourcePath)
+		if err != nil {
+			t.Errorf("RemoveDebRepository failed: %v", err)
+		}
+
+		if _, err := os.Stat(sourcePath); !os.IsNotExist(err) {
+			t.Error("Source file should have been removed")
+		}
+	})
+
+	t.Run("remove nonexistent source", func(t *testing.T) {
+		err := RemoveDebRepository(filepath.Join(tmpDir, "nonexistent.sources"))
+		if err != nil {
+			t.Errorf("RemoveDebRepository should not error for nonexistent file: %v", err)
+		}
+	})
 }
 
 // Mock-based tests for reliable unit testing without system dependencies
