@@ -35,12 +35,24 @@ func TestRunDoctor(t *testing.T) {
 		doctorAptfileOnly = true
 		defer func() { doctorAptfileOnly = false }()
 
-		var buf bytes.Buffer
-		os.Stdout = &buf
-		os.Stderr = &buf
-		defer func() { os.Stdout, os.Stderr = os.Stdout, os.Stderr }()
+		r, w, err := os.Pipe()
+		if err != nil {
+			t.Fatal(err)
+		}
+		oldOut, oldErr := os.Stdout, os.Stderr
+		os.Stdout, os.Stderr = w, w
+		defer func() { os.Stdout, os.Stderr = oldOut, oldErr; w.Close() }()
 
-		err := runDoctor(doctorCmd, nil)
+		var buf bytes.Buffer
+		done := make(chan struct{})
+		go func() {
+			_, _ = buf.ReadFrom(r)
+			close(done)
+		}()
+
+		err = runDoctor(doctorCmd, nil)
+		w.Close()
+		<-done
 		if err != nil {
 			t.Fatalf("runDoctor: %v", err)
 		}
@@ -55,11 +67,24 @@ func TestRunDoctor(t *testing.T) {
 		doctorAptfileOnly = true
 		defer func() { doctorAptfileOnly = false; aptfilePath = filepath.Join(dir, "Aptfile") }()
 
-		var buf bytes.Buffer
-		os.Stderr = &buf
-		defer func() { os.Stderr = os.Stderr }()
+		r, w, err := os.Pipe()
+		if err != nil {
+			t.Fatal(err)
+		}
+		oldErr := os.Stderr
+		os.Stderr = w
+		defer func() { os.Stderr = oldErr; w.Close() }()
 
-		err := runDoctor(doctorCmd, nil)
+		var buf bytes.Buffer
+		done := make(chan struct{})
+		go func() {
+			_, _ = buf.ReadFrom(r)
+			close(done)
+		}()
+
+		err = runDoctor(doctorCmd, nil)
+		w.Close()
+		<-done
 		if err != nil {
 			t.Fatalf("runDoctor: %v", err)
 		}
