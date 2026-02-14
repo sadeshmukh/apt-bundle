@@ -243,6 +243,16 @@ make build
 sudo make install
 ```
 
+### Pre-commit Hook
+
+Install the pre-commit hook to automatically format, lint, and verify Go code before each commit:
+
+```bash
+make install-hooks
+```
+
+The hook runs `golangci-lint --fix`, verifies the build, and runs lint. It only runs when Go files are staged (docs-only commits are skipped).
+
 ### Requirements
 
 - Go 1.21 or later

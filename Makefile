@@ -1,4 +1,4 @@
-.PHONY: build install clean test test-coverage test-coverage-html fmt vet lint help package release-test ci-test
+.PHONY: build install clean test test-coverage test-coverage-html fmt vet lint help package release-test ci-test install-hooks
 
 BINARY_NAME=apt-bundle
 BUILD_DIR=build
@@ -25,6 +25,7 @@ help:
 	@echo "  package             - Build .deb packages locally using nfpm"
 	@echo "  ci-test             - Test CI build step locally (mimics GitHub Actions)"
 	@echo "  release-test        - Test release workflow locally (dry-run)"
+	@echo "  install-hooks       - Install git pre-commit hook (format, lint, build)"
 	@echo "  help                - Show this help message"
 	@echo ""
 	@echo "Environment variables:"
@@ -169,3 +170,10 @@ release-test:
 	@echo "VERSION file contents: $$(cat VERSION)"
 	@echo "This would calculate next patch version based on existing releases"
 	@echo "Run 'make package' to build packages locally"
+
+# Install git pre-commit hook (runs format, lint, build on commit)
+install-hooks:
+	@echo "Installing git pre-commit hook..."
+	@chmod +x .githooks/pre-commit
+	@git config core.hooksPath .githooks
+	@echo "✓ Pre-commit hook installed. Run on: git commit (when Go files are staged)"

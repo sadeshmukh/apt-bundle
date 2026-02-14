@@ -1,0 +1,30 @@
+#!/bin/sh
+# Pre-commit hook: format, lint, and verify Go code before commit.
+# Install with: make install-hooks
+
+set -e
+
+# Only run if staged files include Go code
+if ! git diff --cached --name-only | grep -q '\.go$'; then
+  echo "No Go files staged, skipping pre-commit checks"
+  exit 0
+fi
+
+echo "Running pre-commit checks..."
+
+# 1. Autofix (formatting, imports)
+echo "  → golangci-lint --fix"
+go run github.com/golangci/golangci-lint/cmd/golangci-lint@latest run --fix
+
+# 2. Re-stage any files modified by autofix
+git add -u
+
+# 3. Verify build
+echo "  → go build"
+go build ./cmd/apt-bundle
+
+# 4. Lint (catch unfixable issues)
+echo "  → golangci-lint"
+go run github.com/golangci/golangci-lint/cmd/golangci-lint@latest run
+
+echo "✓ Pre-commit checks passed"
