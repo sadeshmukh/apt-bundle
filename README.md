@@ -12,6 +12,7 @@ A declarative, Brewfile-like wrapper for `apt`, inspired by `brew bundle` — no
 
 - 📦 **Declarative Package Management**: Define packages in a simple text file
 - 🔄 **Idempotent Operations**: Safe to run multiple times
+- 🔀 **Sync**: Make system match Aptfile in one command (install + cleanup)
 - 🔑 **Repository & Key Management**: Add PPAs, custom repositories, and GPG keys
 - 📝 **Version Pinning**: Install specific package versions
 - 🚀 **Simple CLI**: Easy-to-use command-line interface
@@ -28,7 +29,7 @@ A declarative, Brewfile-like wrapper for `apt`, inspired by `brew bundle` — no
 | Ansible / Chef | Zero learning curve, no YAML or DSL—just packages and directives |
 | Nix | Works with your existing apt ecosystem; no paradigm shift |
 
-**Key benefits:** The Aptfile is declarative and shareable (commit it to git). Use `apt-bundle dump` to generate an Aptfile from your current system, `apt-bundle check` to validate without installing, and `apt-bundle cleanup` to remove packages no longer in the Aptfile (when using state-tracked installs).
+**Key benefits:** The Aptfile is declarative and shareable (commit it to git). Use `apt-bundle dump` to generate an Aptfile from your current system, `apt-bundle check` to validate without installing, `apt-bundle sync` to make the system match the Aptfile in one command (install + cleanup), and `apt-bundle cleanup` to remove packages no longer in the Aptfile (when using state-tracked installs).
 
 ## Installation
 
@@ -97,6 +98,9 @@ sudo apt-bundle --file /path/to/Aptfile
 
 # Skip updating package lists (useful in CI/CD)
 sudo apt-bundle --no-update
+
+# Make system match Aptfile (install missing, remove no-longer-listed)
+sudo apt-bundle sync
 
 # Check if packages are installed (no root required)
 apt-bundle check
