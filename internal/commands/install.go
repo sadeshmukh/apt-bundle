@@ -215,8 +215,8 @@ func runInstallDryRun(entries []aptfile.Entry) error {
 			}
 		case aptfile.EntryTypeApt:
 			pkgName := aptfile.ExtractPkgName(entry.Value)
-			installed, _ := apt.IsPackageInstalled(pkgName)
-			if !installed {
+			installed, err := apt.IsPackageInstalled(pkgName)
+			if err != nil || !installed {
 				wouldInstall = append(wouldInstall, entry.Value)
 			}
 		}

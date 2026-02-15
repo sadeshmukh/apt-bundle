@@ -170,8 +170,8 @@ func TestIsPackageInstalledWithMock(t *testing.T) {
 		SetExecutor(mock)
 
 		installed, err := IsPackageInstalled("nonexistent")
-		if err != nil {
-			t.Errorf("Expected no error, got %v", err)
+		if err == nil {
+			t.Error("Expected error when dpkg-query fails, got nil")
 		}
 		if installed {
 			t.Error("Expected installed=false when command fails, got true")

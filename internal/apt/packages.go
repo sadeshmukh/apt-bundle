@@ -14,13 +14,12 @@ const dpkgStatusInstalled = "install ok installed"
 const CandidateVersionNone = "(none)"
 
 // IsPackageInstalled checks if a package is installed on the system.
-// On any dpkg-query failure (package not found, command error, permission denied),
-// it returns (false, nil). Callers cannot distinguish "not installed" from "check failed";
-// both are treated as "not installed" so install can proceed (idempotent behavior).
+// Returns (false, err) on dpkg-query failure (package not found, command error, permission denied).
+// Callers can distinguish "not installed" (installed=false, err=nil) from "check failed" (err!=nil).
 func IsPackageInstalled(packageName string) (bool, error) {
 	output, err := runCommandWithOutput("dpkg-query", "-W", "-f=${Status}", packageName)
 	if err != nil {
-		return false, nil
+		return false, err
 	}
 
 	status := string(output)
@@ -76,13 +75,12 @@ func AutoRemove() error {
 }
 
 // GetInstalledVersion returns the installed version of a package, or empty string if not installed.
-// On any dpkg-query failure (package not found, command error, permission denied),
-// it returns ("", nil). Callers cannot distinguish "not installed" from "query failed";
-// both are treated as "no version" so callers can proceed (e.g., skip or try install).
+// Returns ("", err) on dpkg-query failure (package not found, command error, permission denied).
+// Callers can distinguish "not installed" (version="", err=nil) from "query failed" (err!=nil).
 func GetInstalledVersion(packageName string) (string, error) {
 	output, err := runCommandWithOutput("dpkg-query", "-W", "-f=${Version}", packageName)
 	if err != nil {
-		return "", nil
+		return "", err
 	}
 	return strings.TrimSpace(string(output)), nil
 }

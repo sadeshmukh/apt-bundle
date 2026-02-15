@@ -70,7 +70,8 @@ func TestRunCheck(t *testing.T) {
 		mock := testutil.NewMockExecutor()
 		mock.OutputFunc = func(name string, args ...string) ([]byte, error) {
 			if name == "dpkg-query" {
-				return nil, errors.New("not installed")
+				// Simulate "not installed" - dpkg-query succeeds but status is not "install ok installed"
+				return []byte("deinstall ok config-files"), nil
 			}
 			return nil, errors.New("unexpected")
 		}
@@ -86,6 +87,29 @@ func TestRunCheck(t *testing.T) {
 		}
 		if len(missing) != 1 || missing[0] != "missingpkg" {
 			t.Errorf("expected missing=[missingpkg], got %v", missing)
+		}
+	})
+
+	t.Run("doCheck returns error when package check fails", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		tmpFile := filepath.Join(tmpDir, "Aptfile")
+		if err := os.WriteFile(tmpFile, []byte("apt somepkg\n"), 0644); err != nil {
+			t.Fatal(err)
+		}
+
+		mock := testutil.NewMockExecutor()
+		mock.OutputFunc = func(name string, args ...string) ([]byte, error) {
+			if name == "dpkg-query" {
+				return nil, errors.New("dpkg-query failed")
+			}
+			return nil, errors.New("unexpected")
+		}
+		apt.SetExecutor(mock)
+		defer apt.ResetExecutor()
+
+		_, _, _, err := doCheck(tmpFile)
+		if err == nil {
+			t.Error("expected doCheck to return error when dpkg-query fails")
 		}
 	})
 
