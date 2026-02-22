@@ -224,36 +224,7 @@ When tests pass locally but fail in CI:
 
 ## Architecture
 
-### Command Structure
-
-The CLI uses [Cobra](https://github.com/spf13/cobra) for command parsing:
-
-- `cmd/apt-bundle/main.go`: Entry point
-- `internal/commands/`: Command implementations
-  - `install.go`: Install command
-  - `check.go`: Check command
-  - `dump.go`: Dump command
-
-### Aptfile Parsing
-
-- `internal/aptfile/`: Parses Aptfile format
-  - Tokenizes directives
-  - Validates syntax
-  - Provides structured representation
-
-### APT Integration
-
-- `internal/apt/`: Wraps apt-get and add-apt-repository
-  - Executes system commands
-  - Checks for existing packages/repositories
-  - Handles errors gracefully
-
-### Configuration
-
-- `internal/config/`: Manages configuration
-  - Default file paths
-  - Command-line flags
-  - Environment variables
+For a detailed walkthrough of the internal design — including motivation, component diagrams, data flow for each command, and guidance on where to make changes for new features — see the **[Architecture](architecture.html)** page.
 
 ## Pull Request Guidelines
 
@@ -372,6 +343,7 @@ make ci-build ARCH=i386
 - [Go Documentation](https://golang.org/doc/)
 - [Cobra Documentation](https://github.com/spf13/cobra/blob/main/site/content/introduction.md)
 - [Go Testing](https://golang.org/pkg/testing/)
+- [Architecture](architecture.html) - Internal design, component diagrams, and feature orientation guide
 - [Project Requirements](https://github.com/apt-bundle/apt-bundle/blob/main/specs/requirements.md) - Internal specification
 - [Technical Specification](https://github.com/apt-bundle/apt-bundle/blob/main/specs/tech-specs.md) - Internal specification
 
