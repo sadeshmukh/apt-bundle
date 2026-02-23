@@ -1,6 +1,7 @@
 # apt-bundle
 
 [![CI](https://github.com/apt-bundle/apt-bundle/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/apt-bundle/apt-bundle/actions/workflows/ci.yml)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 A declarative, Brewfile-like wrapper for `apt`, inspired by `brew bundle` — not a full config management system.
 
