@@ -51,5 +51,6 @@ crash.log
 crash.*.log
 
 .claude/settings.local.json
+.claude/settings.json
 .worktrees/
 .vscode/
