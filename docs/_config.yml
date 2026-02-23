@@ -31,7 +31,7 @@ aux_links:
     - https://github.com/apt-bundle/apt-bundle
 
 # Footer content
-footer_content: "Released under the MIT License"
+footer_content: "Released under the Apache 2.0 License"
 
 # Color scheme - use nil for default, or specify: light, dark
 # color_scheme: light
