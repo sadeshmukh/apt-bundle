@@ -1,21 +1,20 @@
 Package: apt-bundle
-Version: 0.2.54
+Version: 0.2.55
 Architecture: amd64
 Maintainer: maintainers@apt-bundle.org
 Installed-Size: 6056
 Depends: apt
 Recommends: curl
 Suggests: git
-Filename: /home/runner/work/apt-bundle/apt-bundle/docs/repo/pool/main/a/apt-bundle/apt-bundle_0.2.54_linux_amd64.deb
-Size: 2674190
-MD5sum: 1ef4a215419640e2e8cb089eca90b5f6
-SHA1: 6c443b5cff00b86b2bae6feaaa6002b941e6531d
-SHA256: b3755700a74d98f7ea8b7d7b60f906bcb666faedd25cdae03fcb610f86344c70
+Filename: /home/runner/work/apt-bundle/apt-bundle/docs/repo/pool/main/a/apt-bundle/apt-bundle_0.2.55_linux_amd64.deb
+Size: 2667420
+MD5sum: a267d0653405d4a22b6d1d1333192b14
+SHA1: bf235c81992eb881dbe44f856f50260c7f0bf6ae
+SHA256: 48205a1cd9b6fb8e46e29299a1954e3433d7705878944b1d3fceb7e32004d94a
 Section: utils
 Priority: optional
 Homepage: https://apt-bundle.github.io/apt-bundle
 Description: A declarative package manager for apt, inspired by Homebrew's brew bundle.
  apt-bundle provides a simple, declarative, and shareable way to manage
  apt packages and repositories on Debian-based systems.
-License: MIT
 
